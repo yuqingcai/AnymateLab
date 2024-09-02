@@ -1,4 +1,5 @@
 #include "stage.h"
+#include "features.h"
 #include <QFile>
 #include <QCursor>
 #include <QRandomGenerator>
@@ -10,7 +11,7 @@ static QShader getShader(const QString &name)
     return f.open(QIODevice::ReadOnly) ? QShader::fromSerialized(f.readAll()) : QShader();
 }
 
-float vertexData1[] = {
+float vertexCube[] = {
     //---- Position------   -----Color-----
     // X       Y       Z    R     G     B
 
@@ -58,8 +59,7 @@ float vertexData1[] = {
     -100.0f,  100.0f, -100.0f,   1.0f, 0.0f, 1.0f,
 };
 
-
-float vertexData2[] = {
+float vertexPyramid[] = {
 
     //---- Position------   -----Color-----
     // X       Y       Z    R     G     B
@@ -89,433 +89,269 @@ float vertexData2[] = {
      100.0f, -100.0f,  100.0f, 0.0f, 1.0f, 1.0f,
     -100.0f, -100.0f,  100.0f, 0.0f, 1.0f, 1.0f,
 
-
 };
 
 
 StageRenderer::StageRenderer()
 {
-    m_models1 = new glm::mat4[m_instances1];
-    for (int i = 0; i < m_instances1; i ++) {
+    m_modelCubes = new glm::mat4[m_Cubes];
+    for (int i = 0; i < m_Cubes; i ++) {
         double ns = QRandomGenerator::global()->bounded(1, 2) * 0.5;
         double ntX = QRandomGenerator::global()->bounded(-16000, 16000);
         double ntY = QRandomGenerator::global()->bounded(-16000, 16000);
-        m_models1[i] = glm::mat4(1.0f);
-        m_models1[i] = glm::scale(m_models1[i], glm::vec3(ns, ns, ns));
-        m_models1[i] = glm::translate(m_models1[i],
-                                      glm::vec3(ntX, ntY, 0));
+        m_modelCubes[i] = glm::mat4(1.0f);
+        m_modelCubes[i] = glm::scale(m_modelCubes[i], glm::vec3(ns, ns, ns));
+        m_modelCubes[i] = glm::translate(m_modelCubes[i], glm::vec3(ntX, ntY, 0));
     }
 
-    m_models2 = new glm::mat4[m_instances2];
-    for (int i = 0; i < m_instances2; i ++) {
+    m_modelPyramids = new glm::mat4[m_Pyramids];
+    for (int i = 0; i < m_Pyramids; i ++) {
         double ns = QRandomGenerator::global()->bounded(1, 2) * 0.5;
         double ntX = QRandomGenerator::global()->bounded(-16000, 16000);
         double ntY = QRandomGenerator::global()->bounded(-16000, 16000);
-        m_models2[i] = glm::mat4(1.0f);
-        m_models2[i] = glm::scale(m_models2[i], glm::vec3(ns, ns, ns));
-        m_models2[i] = glm::translate(m_models2[i],
-                                      glm::vec3(ntX, ntY, 0));
-    }
+        m_modelPyramids[i] = glm::mat4(1.0f);
+        m_modelPyramids[i] = glm::scale(m_modelPyramids[i], glm::vec3(ns, ns, ns));
+        m_modelPyramids[i] = glm::translate(m_modelPyramids[i], glm::vec3(ntX, ntY, 0));
+    }    
 }
 
 StageRenderer::~StageRenderer()
 {
-    if (m_models1) {
-        delete m_models1;
+    if (m_modelCubes) {
+        delete m_modelCubes;
     }
-    if (m_models2) {
-        delete m_models2;
+    if (m_modelPyramids) {
+        delete m_modelPyramids;
     }
+}
+
+
+int StageRenderer::createCubeBuffer()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_vectexBufferCube.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                              QRhiBuffer::VertexBuffer,
+                                              sizeof(vertexCube)));
+    m_vectexBufferCube->create();
+
+    m_modelBufferCube.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                             QRhiBuffer::VertexBuffer,
+                                             m_Cubes*sizeof(glm::mat4)));
+    m_modelBufferCube->create();
+
+    return m_Cubes*sizeof(glm::mat4);
+}
+
+int StageRenderer::createPyramidBuffer()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_vectexBufferPyramid.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                                 QRhiBuffer::VertexBuffer,
+                                                 sizeof(vertexPyramid)));
+    m_vectexBufferPyramid->create();
+
+    m_modelBufferPyramid.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                                QRhiBuffer::VertexBuffer,
+                                                m_Pyramids*sizeof(glm::mat4)));
+    m_modelBufferPyramid->create();
+
+    return m_Pyramids*sizeof(glm::mat4);
+}
+
+
+int StageRenderer::createShaderResource()
+{
+    if (!m_rhi)
+        return -1;
+
+    // uniformbuffer1 的每个block包含两个矩阵，view matrix 和 projection matrix
+    // 每个block必须根据硬件进行对齐。“对齐”是为了在绘图的时候可以通过字节偏移量动态的把
+    // 缓冲区里的某个block值映射到 Shader 里的 uniform block，而偏移量必须是“对齐字节
+    // 数”的整数倍。
+    int blockSize = 64*2;
+    int bufferSize = 0;
+    m_uniformBufferBlockSize = m_rhi->ubufAligned(blockSize);
+    bufferSize = m_uniformBufferBlockSize * m_uniformBufferBlockCount;
+    m_uniformBuffer.reset(m_rhi->newBuffer(QRhiBuffer::Dynamic,
+                                           QRhiBuffer::UniformBuffer,
+                                           bufferSize));
+    m_uniformBuffer->create();
+
+    m_srb.reset(m_rhi->newShaderResourceBindings());
+
+    // uniform 缓冲区使用 uniformBufferWithDynamicOffset 函数声明绑定
+    m_srb->setBindings({
+        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0,
+            QRhiShaderResourceBinding::VertexStage,
+            m_uniformBuffer.get(),
+            bufferSize),
+    });
+    m_srb->create();
+
+    return bufferSize;
+}
+
+int StageRenderer::createPipline1()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_pipeline1.reset(m_rhi->newGraphicsPipeline());
+
+    m_pipeline1->setShaderStages({
+        {
+            QRhiShaderStage::Vertex,
+            getShader(QLatin1String(":/AnymateLab/shaders/stage.vert.qsb"))
+        },
+        {
+            QRhiShaderStage::Fragment,
+            getShader(QLatin1String(":/AnymateLab/shaders/stage.frag.qsb"))
+        }
+    });
+
+    QRhiVertexInputLayout inputLayout;
+    inputLayout.setBindings(
+        {
+         // PerVertex 表示该顶点属性的索引是以“顶点”进行递增的
+         { 6 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+         // PerInstance 表示该顶点属性的索引是以“实例”进行递增的
+         { 64, QRhiVertexInputBinding::PerInstance },
+         }
+        );
+
+    inputLayout.setAttributes(
+        {
+         // binding0
+         { 0, 0, QRhiVertexInputAttribute::Float3, 0 },
+         { 0, 1, QRhiVertexInputAttribute::Float3, 3 * sizeof(float) },
+         // binding1, model矩阵由4个 vec4构成，每个vec4代表一列，从location2开始，
+         // 每个列对应一个location。
+         { 1, 2, QRhiVertexInputAttribute::Float4, 0 },
+         { 1, 3, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+         { 1, 4, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+         { 1, 5, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+         }
+        );
+    m_pipeline1->setVertexInputLayout(inputLayout);
+
+    m_pipeline1->setSampleCount(m_sampleCount);
+    m_pipeline1->setShaderResourceBindings(m_srb.get());
+    m_pipeline1->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+    m_pipeline1->setDepthTest(true);
+    m_pipeline1->setDepthWrite(true);
+    m_pipeline1->create();
+
+    return 1;
+}
+
+int StageRenderer::createPipline2()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_pipeline2.reset(m_rhi->newGraphicsPipeline());
+
+    m_pipeline2->setShaderStages({
+        {
+            QRhiShaderStage::Vertex,
+            getShader(QLatin1String(":/AnymateLab/shaders/bezier.vert.qsb"))
+        },
+        {
+            QRhiShaderStage::Fragment,
+            getShader(QLatin1String(":/AnymateLab/shaders/bezier.frag.qsb"))
+        }
+    });
+
+    QRhiVertexInputLayout inputLayout;
+    inputLayout.setBindings(
+        {
+         // 顶点着色模式（PerVertex Mode）：顶点属性将为每个顶点更新。这是常见
+         // 的模式，用于正常的非实例化渲染，每个顶点属性会随着顶点的变化而变化。
+         // 实例化着色模式（PerInstance Mode）：顶点属性将为每个实例更新一次。
+         // 这种模式在实例化渲染中很有用，适用于每个实例使用相同的顶点属性，但是
+         // 每个实例之间的属性可能不同。
+
+         // PerVertex 表示该顶点属性的索引是以“顶点”进行递增的
+         { 6 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+         // PerInstance 表示该顶点属性的索引是以“实例”进行递增的
+         { 64, QRhiVertexInputBinding::PerInstance },
+         }
+        );
+
+    inputLayout.setAttributes(
+        {
+         // binding0
+         { 0, 0, QRhiVertexInputAttribute::Float3, 0 },
+         { 0, 1, QRhiVertexInputAttribute::Float3, 3 * sizeof(float) },
+         // binding1, model矩阵由4个 vec4构成，每个vec4代表一列，从location2开始，
+         // 每个列对应一个location。
+         { 1, 2, QRhiVertexInputAttribute::Float4, 0 },
+         { 1, 3, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+         { 1, 4, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+         { 1, 5, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+         }
+        );
+    m_pipeline2->setVertexInputLayout(inputLayout);
+
+    m_pipeline2->setSampleCount(m_sampleCount);
+    m_pipeline2->setShaderResourceBindings(m_srb.get());
+    m_pipeline2->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+    m_pipeline2->setDepthTest(true);
+    m_pipeline2->setDepthWrite(true);
+    // 绘制线条模式
+    m_pipeline2->setTopology(QRhiGraphicsPipeline::Lines);
+    m_pipeline2->create();
+
+    return 1;
 }
 
 void StageRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (m_rhi != rhi()) {
         m_rhi = rhi();
+        ShowFreatures(m_rhi);
 
-        m_pipeline.reset();
+        createCubeBuffer();
+        createPyramidBuffer();
+        createShaderResource();
 
-        qDebug("pipline reset");
-        qDebug("Backend: %s",                       m_rhi->backendName());
-        qDebug("TextureSizeMin: %d",                m_rhi->resourceLimit(QRhi::TextureSizeMin));
-        qDebug("TextureSizeMax: %d",                m_rhi->resourceLimit(QRhi::TextureSizeMax));
-        qDebug("MaxColorAttachments: %d",           m_rhi->resourceLimit(QRhi::MaxColorAttachments));
-        qDebug("FramesInFlight: %d",                m_rhi->resourceLimit(QRhi::FramesInFlight));
-        qDebug("MaxAsyncReadbackFrames: %d",        m_rhi->resourceLimit(QRhi::MaxAsyncReadbackFrames));
-        qDebug("MaxThreadGroupsPerDimension: %d",   m_rhi->resourceLimit(QRhi::MaxThreadGroupsPerDimension));
-        qDebug("MaxThreadsPerThreadGroup: %d",      m_rhi->resourceLimit(QRhi::MaxThreadsPerThreadGroup));
-        qDebug("MaxThreadGroupX: %d",               m_rhi->resourceLimit(QRhi::MaxThreadGroupX));
-        qDebug("MaxThreadGroupY: %d",               m_rhi->resourceLimit(QRhi::MaxThreadGroupY));
-        qDebug("MaxThreadGroupZ: %d",               m_rhi->resourceLimit(QRhi::MaxThreadGroupZ));
-        qDebug("TextureArraySizeMax: %d",           m_rhi->resourceLimit(QRhi::TextureArraySizeMax));
-        qDebug("MaxUniformBufferRange: %d",         m_rhi->resourceLimit(QRhi::MaxUniformBufferRange));
-        qDebug("MaxVertexInputs: %d",               m_rhi->resourceLimit(QRhi::MaxVertexInputs));
-        qDebug("MaxVertexOutputs: %d",              m_rhi->resourceLimit(QRhi::MaxVertexOutputs));
-
-        if (m_rhi->isFeatureSupported(QRhi::MultisampleTexture)) {
-            qDebug("MultisampleTexture supported");
-        }
-        else {
-            qDebug("MultisampleTexture not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::MultisampleRenderBuffer)) {
-            qDebug("MultisampleRenderBuffer supported");
-        }
-        else {
-            qDebug("MultisampleRenderBuffer not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::DebugMarkers)) {
-            qDebug("DebugMarkers supported");
-        }
-        else {
-            qDebug("DebugMarkers not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::Timestamps)) {
-            qDebug("Timestamps supported");
-        }
-        else {
-            qDebug("Timestamps not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::Instancing)) {
-            qDebug("Instancing supported");
-        }
-        else {
-            qDebug("Instancing not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::CustomInstanceStepRate)) {
-            qDebug("CustomInstanceStepRate supported");
-        }
-        else {
-            qDebug("CustomInstanceStepRate not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::PrimitiveRestart)) {
-            qDebug("PrimitiveRestart supported");
-        }
-        else {
-            qDebug("PrimitiveRestart not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::NonDynamicUniformBuffers)) {
-            qDebug("NonDynamicUniformBuffers supported");
-        }
-        else {
-            qDebug("NonDynamicUniformBuffers not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::NonFourAlignedEffectiveIndexBufferOffset)) {
-            qDebug("NonFourAlignedEffectiveIndexBufferOffset supported");
-        }
-        else {
-            qDebug("NonFourAlignedEffectiveIndexBufferOffset not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::NPOTTextureRepeat)) {
-            qDebug("NPOTTextureRepeat supported");
-        }
-        else {
-            qDebug("NPOTTextureRepeat not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::RedOrAlpha8IsRed)) {
-            qDebug("RedOrAlpha8IsRed supported");
-        }
-        else {
-            qDebug("RedOrAlpha8IsRed not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ElementIndexUint)) {
-            qDebug("ElementIndexUint supported");
-        }
-        else {
-            qDebug("ElementIndexUint not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::Compute)) {
-            qDebug("Compute supported");
-        }
-        else {
-            qDebug("Compute not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::WideLines)) {
-            qDebug("WideLines supported");
-        }
-        else {
-            qDebug("WideLines not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::VertexShaderPointSize)) {
-            qDebug("VertexShaderPointSize supported");
-        }
-        else {
-            qDebug("VertexShaderPointSize not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::BaseVertex)) {
-            qDebug("BaseVertex supported");
-        }
-        else {
-            qDebug("BaseVertex not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::BaseInstance)) {
-            qDebug("BaseInstance supported");
-        }
-        else {
-            qDebug("BaseInstance not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::TriangleFanTopology)) {
-            qDebug("TriangleFanTopology supported");
-        }
-        else {
-            qDebug("TriangleFanTopology not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ReadBackNonUniformBuffer)) {
-            qDebug("ReadBackNonUniformBuffer supported");
-        }
-        else {
-            qDebug("ReadBackNonUniformBuffer not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ReadBackNonBaseMipLevel)) {
-            qDebug("ReadBackNonBaseMipLevel supported");
-        }
-        else {
-            qDebug("ReadBackNonBaseMipLevel not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::TexelFetch)) {
-            qDebug("TexelFetch supported");
-        }
-        else {
-            qDebug("TexelFetch not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::RenderToNonBaseMipLevel)) {
-            qDebug("RenderToNonBaseMipLevel supported");
-        }
-        else {
-            qDebug("RenderToNonBaseMipLevel not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::IntAttributes)) {
-            qDebug("IntAttributes supported");
-        }
-        else {
-            qDebug("IntAttributes not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ScreenSpaceDerivatives)) {
-            qDebug("ScreenSpaceDerivatives supported");
-        }
-        else {
-            qDebug("ScreenSpaceDerivatives not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ReadBackAnyTextureFormat)) {
-            qDebug("ReadBackAnyTextureFormat supported");
-        }
-        else {
-            qDebug("ReadBackAnyTextureFormat not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::PipelineCacheDataLoadSave)) {
-            qDebug("PipelineCacheDataLoadSave supported");
-        }
-        else {
-            qDebug("PipelineCacheDataLoadSave not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ImageDataStride)) {
-            qDebug("ImageDataStride supported");
-        }
-        else {
-            qDebug("ImageDataStride not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::RenderBufferImport)) {
-            qDebug("RenderBufferImport supported");
-        }
-        else {
-            qDebug("RenderBufferImport not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ThreeDimensionalTextures)) {
-            qDebug("ThreeDimensionalTextures supported");
-        }
-        else {
-            qDebug("ThreeDimensionalTextures not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::RenderTo3DTextureSlice)) {
-            qDebug("RenderTo3DTextureSlice supported");
-        }
-        else {
-            qDebug("RenderTo3DTextureSlice not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::TextureArrays)) {
-            qDebug("TextureArrays supported");
-        }
-        else {
-            qDebug("TextureArrays not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::Tessellation)) {
-            qDebug("Tessellation supported");
-        }
-        else {
-            qDebug("Tessellation not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::GeometryShader)) {
-            qDebug("GeometryShader supported");
-        }
-        else {
-            qDebug("GeometryShader not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::TextureArrayRange)) {
-            qDebug("TextureArrayRange supported");
-        }
-        else {
-            qDebug("TextureArrayRange not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::NonFillPolygonMode)) {
-            qDebug("NonFillPolygonMode supported");
-        }
-        else {
-            qDebug("NonFillPolygonMode not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::OneDimensionalTextures)) {
-            qDebug("OneDimensionalTextures supported");
-        }
-        else {
-            qDebug("OneDimensionalTextures not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::OneDimensionalTextureMipmaps)) {
-            qDebug("OneDimensionalTextureMipmaps supported");
-        }
-        else {
-            qDebug("OneDimensionalTextureMipmaps not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::HalfAttributes)) {
-            qDebug("HalfAttributes supported");
-        }
-        else {
-            qDebug("HalfAttributes not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::RenderToOneDimensionalTexture)) {
-            qDebug("RenderToOneDimensionalTexture supported");
-        }
-        else {
-            qDebug("RenderToOneDimensionalTexture not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::ThreeDimensionalTextureMipmaps)) {
-            qDebug("ThreeDimensionalTextureMipmaps supported");
-        }
-        else {
-            qDebug("ThreeDimensionalTextureMipmaps not supported");
-        }
-        if (m_rhi->isFeatureSupported(QRhi::MultiView)) {
-            qDebug("MultiView supported");
-        }
-        else {
-            qDebug("MultiView not supported");
-        }
+        m_pipeline1.reset();
+        m_pipeline2.reset();
     }
 
     if (m_sampleCount != renderTarget()->sampleCount()) {
         m_sampleCount = renderTarget()->sampleCount();
-        m_pipeline.reset();
+        m_pipeline1.reset();
+        m_pipeline2.reset();
     }
 
     QRhiTexture *finalTex = m_sampleCount > 1 ? resolveTexture() : colorTexture();
     if (m_textureFormat != finalTex->format()) {
         m_textureFormat = finalTex->format();
-        m_pipeline.reset();
+        m_pipeline1.reset();
+        m_pipeline2.reset();
     }
 
-    if (!m_pipeline) {
-        m_pipeline.reset(m_rhi->newGraphicsPipeline());
-
-        m_vectexBuffer1.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
-                                              QRhiBuffer::VertexBuffer,
-                                              sizeof(vertexData1)));
-        m_vectexBuffer1->create();
-
-
-        m_vectexBuffer2.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
-                                               QRhiBuffer::VertexBuffer,
-                                               sizeof(vertexData2)));
-        m_vectexBuffer2->create();
-
-        m_modelBuffer1.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
-                                             QRhiBuffer::VertexBuffer,
-                                             m_instances1*sizeof(glm::mat4)));
-        m_modelBuffer1->create();
-
-        m_modelBuffer2.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
-                                              QRhiBuffer::VertexBuffer,
-                                              m_instances2*sizeof(glm::mat4)));
-        m_modelBuffer2->create();
-
-        // uniformbuffer1 的每个block包含两个矩阵，view matrix 和 projection matrix
-        // 每个block必须根据硬件进行对齐。“对齐”是为了在绘图的时候可以通过字节偏移量动态的把
-        // 缓冲区里的某个block值映射到 Shader 里的 uniform block，而偏移量必须是“对齐字节
-        // 数”的整数倍。
-        int blockSize = 64*2;
-        int bufferSize = 0;
-        m_uniformBufferBlockSize = m_rhi->ubufAligned(blockSize);
-        bufferSize = m_uniformBufferBlockSize * m_uniformBufferBlockCount;
-        m_uniformBuffer.reset(m_rhi->newBuffer(QRhiBuffer::Dynamic,
-                                               QRhiBuffer::UniformBuffer,
-                                               bufferSize));
-        m_uniformBuffer->create();
-
-        m_srb.reset(m_rhi->newShaderResourceBindings());
-
-        // uniform 缓冲区使用 uniformBufferWithDynamicOffset 函数声明绑定
-        m_srb->setBindings({
-            QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
-                0,
-                QRhiShaderResourceBinding::VertexStage,
-                m_uniformBuffer.get(),
-                bufferSize),
-        });
-        m_srb->create();
-
-        m_pipeline->setShaderStages({
-            {
-                QRhiShaderStage::Vertex,
-                getShader(QLatin1String(":/AnymateLab/shaders/stage.vert.qsb"))
-            },
-            {
-                QRhiShaderStage::Fragment,
-                getShader(QLatin1String(":/AnymateLab/shaders/stage.frag.qsb"))
-            }
-        });
-
-        QRhiVertexInputLayout inputLayout;
-        inputLayout.setBindings({
-                                 // 顶点着色模式（PerVertex Mode）：顶点属性将为每个顶点更新。这是常见
-                                 // 的模式，用于正常的非实例化渲染，每个顶点属性会随着顶点的变化而变化。
-                                 // 实例化着色模式（PerInstance Mode）：顶点属性将为每个实例更新一次。
-                                 // 这种模式在实例化渲染中很有用，适用于每个实例使用相同的顶点属性，但是
-                                 // 每个实例之间的属性可能不同。
-
-                                 // PerVertex 表示该顶点属性的索引是以“顶点”进行递增的
-                                 { 6 * sizeof(float), QRhiVertexInputBinding::PerVertex },
-                                 // PerInstance 表示该顶点属性的索引是以“实例”进行递增的
-                                 { 64, QRhiVertexInputBinding::PerInstance },
-                                 });
-
-        inputLayout.setAttributes({
-                                   // binding0
-                                   { 0, 0, QRhiVertexInputAttribute::Float3, 0 },
-                                   { 0, 1, QRhiVertexInputAttribute::Float3, 3 * sizeof(float) },
-                                   // binding1
-                                   // model矩阵由4个 vec4构成，每个vec4代表一列，从location2开始，每个列对应一个location。
-                                   { 1, 2, QRhiVertexInputAttribute::Float4, 0 },
-                                   { 1, 3, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
-                                   { 1, 4, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
-                                   { 1, 5, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
-                                   });
-        m_pipeline->setVertexInputLayout(inputLayout);
-
-        m_pipeline->setSampleCount(m_sampleCount);
-        m_pipeline->setShaderResourceBindings(m_srb.get());
-        m_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
-        m_pipeline->setDepthTest(true);
-        m_pipeline->setDepthWrite(true);
-        // 绘制线条模式
-        // m_pipeline->setTopology(QRhiGraphicsPipeline::Lines);
-        m_pipeline->create();
-
-        QRhiResourceUpdateBatch *batch = m_rhi->nextResourceUpdateBatch();
-        batch->uploadStaticBuffer(m_vectexBuffer1.get(), vertexData1);
-        batch->uploadStaticBuffer(m_vectexBuffer2.get(), vertexData2);
-        batch->uploadStaticBuffer(m_modelBuffer1.get(), m_models1);
-        batch->uploadStaticBuffer(m_modelBuffer2.get(), m_models2);
-
-        cb->resourceUpdate(batch);
-
+    if (!m_pipeline1) {
+        createPipline1();
     }
+
+    if (!m_pipeline2) {
+        createPipline2();
+    }
+
+    QRhiResourceUpdateBatch *batch = m_rhi->nextResourceUpdateBatch();
+    batch->uploadStaticBuffer(m_vectexBufferCube.get(), vertexCube);
+    batch->uploadStaticBuffer(m_vectexBufferPyramid.get(), vertexPyramid);
+    batch->uploadStaticBuffer(m_modelBufferCube.get(), m_modelCubes);
+    batch->uploadStaticBuffer(m_modelBufferPyramid.get(), m_modelPyramids);
+
+    cb->resourceUpdate(batch);
 
 }
 
@@ -553,7 +389,8 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     const QColor clearColor = QColor::fromRgbF(1.0f, 1.0f, 1.0f, 1.0f);
     cb->beginPass(renderTarget(), clearColor, { 1.0f, 0 }, batch);
 
-    cb->setGraphicsPipeline(m_pipeline.get());
+    cb->setGraphicsPipeline(m_pipeline1.get());
+
     cb->setViewport(QRhiViewport(0, 0, outputSize.width(), outputSize.height()));
 
     // 批量更新 uniform 缓冲区
@@ -566,49 +403,52 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
                                64,
                                m_projection.constData());
 
-    for (int i = 0; i < m_instances1; i ++) {
-        glm::mat4 model = glm::rotate(m_models1[i],
+    for (int i = 0; i < m_Cubes; i ++) {
+        glm::mat4 model = glm::rotate(m_modelCubes[i],
                                       qDegreesToRadians(m_angle),
                                       glm::vec3(1.0f, 1.0f, 0.0f));
 
-        batch->uploadStaticBuffer(m_modelBuffer1.get(),
+        batch->uploadStaticBuffer(m_modelBufferCube.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
     }
 
-    for (int i = 0; i < m_instances2; i ++) {
-        glm::mat4 model = glm::rotate(m_models2[i],
+    for (int i = 0; i < m_Pyramids; i ++) {
+        glm::mat4 model = glm::rotate(m_modelPyramids[i],
                                       qDegreesToRadians(m_angle),
                                       glm::vec3(0.0f, 1.0f, 1.0f));
-        batch->uploadStaticBuffer(m_modelBuffer2.get(),
+        batch->uploadStaticBuffer(m_modelBufferPyramid.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
     }
 
-    // // 更新
+    // 更新
     cb->resourceUpdate(batch);
+
     cb->setShaderResources(m_srb.get());
 
-    const QRhiCommandBuffer::VertexInput vbufBindings1[] = {
-        { m_vectexBuffer1.get(), 0 },
-        { m_modelBuffer1.get(), 0 }
+    const QRhiCommandBuffer::VertexInput vertexBufferBindings1[] = {
+        { m_vectexBufferCube.get(), 0 },
+        { m_modelBufferCube.get(), 0 }
     };
-    cb->setVertexInput(0, 2, vbufBindings1);
+    cb->setVertexInput(0, 2, vertexBufferBindings1);
     // 绘制实例，由6个顶点构成，顶点属性数据从偏移量0开始，实例id为0。这里需要注意，实例
     // id是很重要的一个参数，它用于着色器索引 model 矩阵的数据。在本例中 model 矩阵数据
     // 是以顶点属性数组绑定到着色器，并且被声明为以PerInstance模式进行绑定，意思是每绘制
     // 完一个实例（而不是每绘制完一个顶点），model顶点属性的索引才会进行一次递增，这样就能
     // 做到每个绘制的一个实例对应 model 顶点属性数组里的一个 model 矩阵。
-    cb->draw(36, m_instances1);
+    cb->draw(36, m_Cubes);
 
-    const QRhiCommandBuffer::VertexInput vbufBindings2[] = {
-        { m_vectexBuffer2.get(), 0 },
-        { m_modelBuffer2.get(), 0 }
+    cb->setGraphicsPipeline(m_pipeline2.get());
+    cb->setShaderResources(m_srb.get());
+    const QRhiCommandBuffer::VertexInput vertexBufferBindings2[] = {
+        { m_vectexBufferPyramid.get(), 0 },
+        { m_modelBufferPyramid.get(), 0 }
     };
-    cb->setVertexInput(0, 2, vbufBindings2);
-    cb->draw(18, m_instances2);
+    cb->setVertexInput(0, 2, vertexBufferBindings2);
+    cb->draw(18, m_Pyramids);
 
     cb->endPass();
 }

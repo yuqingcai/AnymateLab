@@ -17,14 +17,24 @@ public:
     void render(QRhiCommandBuffer *cb) override;
 
 private:
+    int createCubeBuffer();
+    int createPyramidBuffer();
+    int createShaderResource();
+    int createPipline1();
+    int createPipline2();
+
     QRhi *m_rhi = nullptr;
     int m_sampleCount = 4;
     QRhiTexture::Format m_textureFormat = QRhiTexture::RGBA8;
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline;
-    std::unique_ptr<QRhiBuffer> m_vectexBuffer1;
-    std::unique_ptr<QRhiBuffer> m_modelBuffer1;
-    std::unique_ptr<QRhiBuffer> m_vectexBuffer2;
-    std::unique_ptr<QRhiBuffer> m_modelBuffer2;
+
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline1;
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline2;
+
+    std::unique_ptr<QRhiBuffer> m_vectexBufferCube;
+    std::unique_ptr<QRhiBuffer> m_modelBufferCube;
+
+    std::unique_ptr<QRhiBuffer> m_vectexBufferPyramid;
+    std::unique_ptr<QRhiBuffer> m_modelBufferPyramid;
 
     std::unique_ptr<QRhiBuffer> m_uniformBuffer;
     std::unique_ptr<QRhiShaderResourceBindings> m_srb;
@@ -42,10 +52,10 @@ private:
     int m_uniformBufferBlockSize = 0;
     int m_uniformBufferBlockCount = 1;
 
-    int m_instances1 = 4000;
-    int m_instances2 = 4000;
-    glm::mat4* m_models1;
-    glm::mat4* m_models2;
+    int m_Cubes = 4000;
+    int m_Pyramids = 4000;
+    glm::mat4* m_modelCubes;
+    glm::mat4* m_modelPyramids;
 };
 
 class Stage: public QQuickRhiItem

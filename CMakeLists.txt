@@ -12,6 +12,8 @@ qt_add_executable(appAnymateLab
     stage.cpp
     stage.h
     main.cpp
+    features.cpp
+    features.h
 )
 
 qt_add_qml_module(appAnymateLab
@@ -19,10 +21,13 @@ qt_add_qml_module(appAnymateLab
     VERSION 1.0
     QML_FILES
         Main.qml
-        SOURCES stage.h stage.cpp
         QML_FILES ProjectManager.qml
         QML_FILES MainMenu.qml
-        SOURCES
+        RESOURCES
+        RESOURCES
+        RESOURCES
+        RESOURCES shaders/bezier.vert
+        RESOURCES shaders/bezier.frag
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -52,7 +57,7 @@ install(TARGETS appAnymateLab
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-qt_add_shaders(appAnymateLab "appAnymateLab_shaders"
+qt_add_shaders(appAnymateLab "appAnymateLab_color_shaders"
     # PRECOMPILE
     # OPTIMIZED
     PREFIX
@@ -70,6 +75,17 @@ qt_add_shaders(appAnymateLab "appAnymateLab_stage_shaders"
     FILES
         shaders/stage.vert
         shaders/stage.frag
+)
+
+
+qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
+    # PRECOMPILE
+    # OPTIMIZED
+    PREFIX
+        /AnymateLab
+    FILES
+        shaders/bezier.vert
+        shaders/bezier.frag
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
