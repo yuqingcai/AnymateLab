@@ -19,25 +19,39 @@ public:
 private:
     int createCubeBuffer();
     int createPyramidBuffer();
-    int createShaderResource();
+    int createBezierBuffer();
+
     int createPipline1();
     int createPipline2();
+    int createPipline3();
 
     QRhi *m_rhi = nullptr;
     int m_sampleCount = 4;
     QRhiTexture::Format m_textureFormat = QRhiTexture::RGBA8;
 
     std::unique_ptr<QRhiGraphicsPipeline> m_pipeline1;
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline2;
-
+    std::unique_ptr<QRhiShaderResourceBindings> m_srb1;
+    std::unique_ptr<QRhiBuffer> m_uniformBuffer1;
     std::unique_ptr<QRhiBuffer> m_vectexBufferCube;
     std::unique_ptr<QRhiBuffer> m_modelBufferCube;
+    int m_Cubes = 4000;
+    glm::mat4* m_modelCubes;
 
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline2;
+    std::unique_ptr<QRhiShaderResourceBindings> m_srb2;
+    std::unique_ptr<QRhiBuffer> m_uniformBuffer2;
     std::unique_ptr<QRhiBuffer> m_vectexBufferPyramid;
     std::unique_ptr<QRhiBuffer> m_modelBufferPyramid;
+    int m_Pyramids = 4000;
+    glm::mat4* m_modelPyramids;
 
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb;
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline3;
+    std::unique_ptr<QRhiShaderResourceBindings> m_srb3;
+    std::unique_ptr<QRhiBuffer> m_uniformBuffer3;
+    std::unique_ptr<QRhiBuffer> m_vectexBufferBezier;
+    std::unique_ptr<QRhiBuffer> m_modelBufferBezier;
+    int m_Beziers = 1;
+    glm::mat4* m_modelBeziers;
 
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
@@ -49,13 +63,8 @@ private:
     float m_zoom = 1.0f;
     QPointF m_focus = {0.0f, 0.0f};
 
-    int m_uniformBufferBlockSize = 0;
     int m_uniformBufferBlockCount = 1;
 
-    int m_Cubes = 4000;
-    int m_Pyramids = 4000;
-    glm::mat4* m_modelCubes;
-    glm::mat4* m_modelPyramids;
 };
 
 class Stage: public QQuickRhiItem

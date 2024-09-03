@@ -77,7 +77,6 @@ qt_add_shaders(appAnymateLab "appAnymateLab_stage_shaders"
         shaders/stage.frag
 )
 
-
 qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
     # PRECOMPILE
     # OPTIMIZED

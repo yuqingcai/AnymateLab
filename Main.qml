@@ -56,7 +56,7 @@ ApplicationWindow {
 
 
         SplitView {
-            SplitView.preferredWidth: 250
+            SplitView.preferredWidth: 0
             // SplitView.maximumWidth: 400
             orientation: Qt.Vertical
 
@@ -114,7 +114,7 @@ ApplicationWindow {
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
                 sampleCount: 4 // normal MSAA, 8: high MSAA
-                colorBufferFormat:RGBA8
+                // colorBufferFormat:RGBA8
                 mirrorVertically: false
                 // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
                 // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
@@ -142,7 +142,7 @@ ApplicationWindow {
         }
 
         SplitView {
-            SplitView.preferredWidth: 250
+            SplitView.preferredWidth: 0
             SplitView.maximumWidth: 250
         }
     }
