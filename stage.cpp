@@ -5,10 +5,22 @@
 #include <QRandomGenerator>
 #include <QtMath>
 
+#define STD140_ALIGN_INT   4
+#define STD140_ALIGN_FLOAT 4
+#define STD140_ALIGN_VEC2  8
+#define STD140_ALIGN_VEC3 16
+#define STD140_ALIGN_VEC4 16
+#define STD140_ALIGN_MAT4 64
+
 static QShader getShader(const QString &name)
 {
     QFile f(name);
-    return f.open(QIODevice::ReadOnly) ? QShader::fromSerialized(f.readAll()) : QShader();
+    return f.open(QIODevice::ReadOnly) ?
+               QShader::fromSerialized(f.readAll()) : QShader();
+}
+
+static size_t align(size_t offset, size_t alignment) {
+    return (offset + alignment - 1) & ~(alignment - 1);
 }
 
 float vertexCube[] = {
@@ -94,12 +106,12 @@ float vertexPyramid[] = {
 float vertexBezier[] = {
     //---- Position------   -----Color-----
     // X       Y       Z    R     G     B
-      0.0f,    0.0f,  200.0f,   1.0f, 0.0f, 0.0f,
-    200.0f,    0.0f,  200.0f,   1.0f, 0.0f, 0.0f,
-      0.0f,  100.0f,  200.0f,   1.0f, 0.0f, 0.0f,
-      0.0f,  100.0f,  200.0f,   1.0f, 0.0f, 0.0f,
-    200.0f,    0.0f,  200.0f,   1.0f, 0.0f, 0.0f,
-    200.0f,  100.0f,  200.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
 };
 
 
@@ -128,6 +140,7 @@ StageRenderer::StageRenderer()
     m_modelBeziers = new glm::mat4[m_Beziers];
     for (int i = 0; i < m_Beziers; i ++) {
         m_modelBeziers[i] = glm::mat4(1.0f);
+        m_modelBeziers[i] = glm::translate(m_modelBeziers[i], glm::vec3(0.0f, 0.0f, 0.0f));
     }
 }
 
@@ -385,7 +398,14 @@ int StageRenderer::createPipline3()
          { 1, 5, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
          });
 
-    int blockSize = 64*2 + sizeof(glm::vec2) * 4;
+    int blockSize = sizeof(glm::mat4) +
+                    sizeof(glm::mat4) +
+                    sizeof(int) +
+                    sizeof(float) +
+                    sizeof(glm::vec2) +
+                    sizeof(float) +
+                    sizeof(float)
+        ;
     int bufferSize = 0;
     bufferSize = m_rhi->ubufAligned(blockSize) * m_uniformBufferBlockCount;
     m_uniformBuffer3.reset(m_rhi->newBuffer(QRhiBuffer::Dynamic,
@@ -409,6 +429,17 @@ int StageRenderer::createPipline3()
     m_pipeline3->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
     m_pipeline3->setDepthTest(true);
     m_pipeline3->setDepthWrite(true);
+
+    QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
+    targetBlends[0].enable = true;
+    targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
+    targetBlends[0].dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opColor = QRhiGraphicsPipeline::Add;
+    targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
+    targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
+    // targetBlends[0].colorWrite = QRhiGraphicsPipeline::ColorMask(0xF);
+    m_pipeline3->setTargetBlends(targetBlends.begin(), targetBlends.end());
     // m_pipeline3->setTopology(QRhiGraphicsPipeline::LineStrip);
     m_pipeline3->create();
 
@@ -482,10 +513,10 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     // 使用正交投影，left + right 和 bottom + top决定投影的大小 ，相应的，
     // left和right 决定了投影的水平中心, bottom 和 top 则决定了投影的垂直中心。
     //
-    // m_projection.ortho(-outputSize.width()/2.0 + m_orthoX,
-    //                    outputSize.width()/2.0 + m_orthoX,
-    //                    -outputSize.height()/2.0 + m_orthoY,
-    //                    outputSize.height()/2.0 + m_orthoY,
+    // m_projection.ortho(-outputSize.width()/(m_zoom/20) + m_orthoX,
+    //                    outputSize.width()/(m_zoom/20) + m_orthoX,
+    //                    -outputSize.height()/(m_zoom/20) + m_orthoY,
+    //                    outputSize.height()/(m_zoom/20) + m_orthoY,
     //                    -200.0f, 10000.0f);
 
     m_projection.perspective(45.0f,
@@ -496,7 +527,7 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
 
     // 使用透视投影，相机的z轴位置决定了场景投影范围的“大小”，相机的目标则决定了
     // 投影“中心点”。
-    QVector3D cameraPos(0.0f, 0.0f, 800.0f + m_zoom);
+    QVector3D cameraPos(m_focus.rx(), m_focus.ry(), 800.0f + m_zoom);
     QVector3D cameraTarget(m_focus.rx(), m_focus.ry(), 0.0f);
     QVector3D cameraUp(0.0f, 1.0f, 0.0f);
     m_view.setToIdentity();
@@ -529,43 +560,66 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
                                64,
                                m_projection.constData());
 
-
     // 更新 uniform buffer3 缓冲区
+
+    size_t offset = 0;
+    int shapeType = 2;
+    float radius = 80.0;
+    glm::vec2 circleCenter(0.0, 0.0);
+    float thickness = 10.0;
+    float smoothness = 1.0;
+
+    offset = align(0, STD140_ALIGN_MAT4);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               0,
-                               64,
+                               offset,
+                               sizeof(glm::mat4),
                                m_view.constData());
+
+    offset = align(sizeof(glm::mat4), STD140_ALIGN_MAT4);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               64,
-                               64,
+                               offset,
+                               sizeof(glm::mat4),
                                m_projection.constData());
 
-    glm::vec2 resolution(800.0, 600.0);
-    glm::vec2 p0(0.0, 0.0);
-    glm::vec2 p1(100.0, 50.0);
-    glm::vec2 p2(200.0, 0.0);
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4), STD140_ALIGN_INT);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               64*2,
-                               sizeof(glm::vec2),
-                               &resolution);
+                               offset,
+                               sizeof(int),
+                               &shapeType);
+
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int),
+        STD140_ALIGN_FLOAT);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               64*2 + sizeof(glm::vec2),
-                               sizeof(glm::vec2),
-                               &p0);
+                               offset,
+                               sizeof(float),
+                               &radius);
+
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int) +
+                    sizeof(float), STD140_ALIGN_VEC2);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               64*2 + sizeof(glm::vec2)*2,
+                               offset,
                                sizeof(glm::vec2),
-                               &p1);
+                               &circleCenter);
+
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int) +
+                       sizeof(float) + sizeof(glm::vec2), STD140_ALIGN_FLOAT);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
-                               64*2 + sizeof(glm::vec2)*3,
-                               sizeof(glm::vec2),
-                               &p2);
+                               offset,
+                               sizeof(float),
+                               &thickness);
+
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int) +
+                       sizeof(float) + sizeof(glm::vec2) + sizeof(float),
+                   STD140_ALIGN_FLOAT);
+    batch->updateDynamicBuffer(m_uniformBuffer3.get(),
+                               offset,
+                               sizeof(float),
+                               &smoothness);
 
     for (int i = 0; i < m_Cubes; i ++) {
         glm::mat4 model = glm::rotate(m_modelCubes[i],
                                       qDegreesToRadians(m_angle),
                                       glm::vec3(1.0f, 1.0f, 0.0f));
-
         batch->uploadStaticBuffer(m_modelBufferCube.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
@@ -585,7 +639,7 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     // for (int i = 0; i < m_Beziers; i ++) {
     //     glm::mat4 model = glm::rotate(m_modelBeziers[i],
     //                                   qDegreesToRadians(m_angle),
-    //                                   glm::vec3(0.0f, 1.0f, 1.0f));
+    //                                   glm::vec3(0.0f, 1.0f, 0.0f));
     //     batch->uploadStaticBuffer(m_modelBufferBezier.get(),
     //                               i * sizeof(glm::mat4),
     //                               sizeof(glm::mat4),
@@ -615,7 +669,6 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     };
     cb->setVertexInput(0, 2, inputBindings2);
     cb->draw(18, m_Pyramids);
-
 
     // 使用3号管线绘制贝塞尔曲线
     cb->setGraphicsPipeline(m_pipeline3.get());
@@ -693,10 +746,10 @@ void Stage::wheelEvent(QWheelEvent *event)
 {
     // qDebug() << "Mouse wheel delta: " << event->angleDelta();
     if (event->angleDelta().y() > 0) {
-        m_zoom += 200.0;
+        m_zoom += 20.0;
     }
     else if (event->angleDelta().y() < 0) {
-        m_zoom -= 200.0;
+        m_zoom -= 20.0;
     }
     return QQuickRhiItem::wheelEvent(event);
 }

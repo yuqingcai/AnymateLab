@@ -10,10 +10,9 @@ layout(location = 5) in vec4 modelColumn3;
 layout(std140, binding = 0) uniform uniformBlock {
     mat4 view;
     mat4 projection;
-    vec2 resolution;  // 屏幕分辨率
-    vec2 p0;          // 贝塞尔曲线的第一个控制点
-    vec2 P1;          // 贝塞尔曲线的第二个控制点
-    vec2 p2;          // 贝塞尔曲线的第三个控制点
+    int shapeType;
+    vec2 circleCenter;
+    float circleRadius;
 };
 
 layout(location = 0) out vec3 v_color;

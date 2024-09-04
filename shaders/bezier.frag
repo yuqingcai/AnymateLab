@@ -7,19 +7,46 @@ layout(location = 0) out vec4 fragColor;
 layout(std140, binding = 0) uniform uniformBlock {
     mat4 view;
     mat4 projection;
-    vec2 resolution;  // 屏幕分辨率
-    vec2 cp0;          // 贝塞尔曲线的第一个控制点
-    vec2 cp1;          // 贝塞尔曲线的第二个控制点
-    vec2 cp2;          // 贝塞尔曲线的第三个控制点
+    int shapeType;
+    float radius;
+    vec2 center;
+    float thickness;
+    float smoothness;
 };
 
 void main()
 {
-    if (fragCoord.x > 50.0 && fragCoord.x < 60.0) {
-        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    vec2 p = fragCoord.xy - center;
+    float dist = length(p);
+
+    float outerEdge = radius + thickness * 0.5;
+    float innerEdge = radius - thickness * 0.5;
+
+    float edge0 = innerEdge + smoothness;
+    float edge1 = outerEdge - smoothness;
+
+    if (abs(fragCoord.y - center.y) > 80 &&
+            abs(fragCoord.y - center.y) < 81 &&
+            abs(fragCoord.x - center.x) <= 81) {
+        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+    else if (abs(fragCoord.x - center.x) > 80 &&
+             abs(fragCoord.x - center.x) < 81 &&
+             abs(fragCoord.y - center.y) <= 81) {
+        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+    else if (dist >= innerEdge && dist <= outerEdge) {
+        float alpha = 1.0;
+        if (dist < edge0) {
+            alpha = smoothstep(innerEdge, edge0, dist);
+        }
+        else if (dist > edge1) {
+            alpha = smoothstep(outerEdge, edge1, dist);
+        }
+
+        fragColor = vec4(1.0, 1.0, 0.0, alpha);
     }
     else {
-        // discard;
-        fragColor = vec4(v_color, 1.0);
+        discard;
     }
 }
