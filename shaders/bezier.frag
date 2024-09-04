@@ -1,7 +1,7 @@
 #version 440
 
-layout(location = 0) in vec3 v_color;
-layout(location = 1) in vec4 fragCoord;
+layout(location = 0) in vec4 fragCoord;
+
 layout(location = 0) out vec4 fragColor;
 
 layout(std140, binding = 0) uniform uniformBlock {

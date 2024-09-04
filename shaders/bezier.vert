@@ -11,16 +11,16 @@ layout(std140, binding = 0) uniform uniformBlock {
     mat4 view;
     mat4 projection;
     int shapeType;
-    vec2 circleCenter;
-    float circleRadius;
+    float radius;
+    vec2 center;
+    float thickness;
+    float smoothness;
 };
 
-layout(location = 0) out vec3 v_color;
-layout(location = 1) out vec4 fragCoord;
+layout(location = 0) out vec4 fragCoord;
 
 void main()
 {
-    v_color = color;
     mat4 model = mat4(modelColumn0, modelColumn1, modelColumn2, modelColumn3);
     gl_Position = projection * view * model * position;
     fragCoord  = model * position;
