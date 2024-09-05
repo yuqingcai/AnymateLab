@@ -64,7 +64,13 @@ private:
     QPointF m_focus = {0.0f, 0.0f};
 
     int m_uniformBufferBlockCount = 1;
-
+    static constexpr auto m_shaderResourceStages =
+        QRhiShaderResourceBinding::VertexStage |
+        QRhiShaderResourceBinding::FragmentStage |
+        QRhiShaderResourceBinding::TessellationControlStage |
+        QRhiShaderResourceBinding::TessellationEvaluationStage |
+        QRhiShaderResourceBinding::ComputeStage |
+        QRhiShaderResourceBinding::GeometryStage;
 };
 
 class Stage: public QQuickRhiItem

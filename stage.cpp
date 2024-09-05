@@ -270,12 +270,11 @@ int StageRenderer::createPipline1()
     m_uniformBuffer1->create();
 
     m_srb1.reset(m_rhi->newShaderResourceBindings());
-
     // uniform 缓冲区使用 uniformBufferWithDynamicOffset 函数声明绑定
     m_srb1->setBindings({
         QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
             0,
-            QRhiShaderResourceBinding::VertexStage,
+            m_shaderResourceStages,
             m_uniformBuffer1.get(),
             bufferSize),
     });
@@ -342,7 +341,7 @@ int StageRenderer::createPipline2()
     m_srb2->setBindings({
         QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
             0,
-            QRhiShaderResourceBinding::VertexStage,
+            m_shaderResourceStages,
             m_uniformBuffer2.get(),
             bufferSize),
     });
@@ -417,7 +416,7 @@ int StageRenderer::createPipline3()
     m_srb3->setBindings({
         QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
             0,
-            QRhiShaderResourceBinding::VertexStage,
+            m_shaderResourceStages,
             m_uniformBuffer3.get(),
             bufferSize),
     });
