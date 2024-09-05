@@ -15,13 +15,14 @@ layout(std140, binding = 0) uniform uniformBlock {
     vec2 center;
     float thickness;
     float smoothness;
+    float angle;
 };
 
-layout(location = 0) out vec4 fragCoord;
+layout(location = 0) out vec4 localCoord;
 
 void main()
 {
     mat4 model = mat4(modelColumn0, modelColumn1, modelColumn2, modelColumn3);
     gl_Position = projection * view * model * position;
-    fragCoord  = model * position;
+    localCoord  = position;
 }

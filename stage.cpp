@@ -123,8 +123,10 @@ StageRenderer::StageRenderer()
         double ntX = QRandomGenerator::global()->bounded(-16000, 16000);
         double ntY = QRandomGenerator::global()->bounded(-16000, 16000);
         m_modelCubes[i] = glm::mat4(1.0f);
-        m_modelCubes[i] = glm::scale(m_modelCubes[i], glm::vec3(ns, ns, ns));
-        m_modelCubes[i] = glm::translate(m_modelCubes[i], glm::vec3(ntX, ntY, 0));
+        m_modelCubes[i] = glm::scale(m_modelCubes[i],
+                                     glm::vec3(ns, ns, ns));
+        m_modelCubes[i] = glm::translate(m_modelCubes[i],
+                                         glm::vec3(ntX, ntY, 0));
     }
 
     m_modelPyramids = new glm::mat4[m_Pyramids];
@@ -133,14 +135,17 @@ StageRenderer::StageRenderer()
         double ntX = QRandomGenerator::global()->bounded(-16000, 16000);
         double ntY = QRandomGenerator::global()->bounded(-16000, 16000);
         m_modelPyramids[i] = glm::mat4(1.0f);
-        m_modelPyramids[i] = glm::scale(m_modelPyramids[i], glm::vec3(ns, ns, ns));
-        m_modelPyramids[i] = glm::translate(m_modelPyramids[i], glm::vec3(ntX, ntY, 0));
+        m_modelPyramids[i] = glm::scale(m_modelPyramids[i],
+                                        glm::vec3(ns, ns, ns));
+        m_modelPyramids[i] = glm::translate(m_modelPyramids[i],
+                                            glm::vec3(ntX, ntY, 0));
     }
 
     m_modelBeziers = new glm::mat4[m_Beziers];
     for (int i = 0; i < m_Beziers; i ++) {
         m_modelBeziers[i] = glm::mat4(1.0f);
-        m_modelBeziers[i] = glm::translate(m_modelBeziers[i], glm::vec3(0.0f, 0.0f, 0.0f));
+        m_modelBeziers[i] = glm::translate(m_modelBeziers[i],
+                                           glm::vec3(0.0f, 0.0f, 100.0f));
     }
 }
 
@@ -403,6 +408,7 @@ int StageRenderer::createPipline3()
                     sizeof(float) +
                     sizeof(glm::vec2) +
                     sizeof(float) +
+                    sizeof(float) +
                     sizeof(float)
         ;
     int bufferSize = 0;
@@ -549,6 +555,18 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
                                64,
                                m_projection.constData());
 
+    // 更新 model cubes 顶点缓冲区
+    for (int i = 0; i < m_Cubes; i ++) {
+        glm::mat4 model = glm::rotate(m_modelCubes[i],
+                                      qDegreesToRadians(m_angle),
+                                      glm::vec3(1.0f, 1.0f, 0.0f));
+        batch->uploadStaticBuffer(m_modelBufferCube.get(),
+                                  i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4),
+                                  &model);
+    }
+
+
     // 更新 uniform buffer2 缓冲区
     batch->updateDynamicBuffer(m_uniformBuffer2.get(),
                                0,
@@ -559,14 +577,25 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
                                64,
                                m_projection.constData());
 
-    // 更新 uniform buffer3 缓冲区
+    // 更新 model pyramids 顶点缓冲区
+    for (int i = 0; i < m_Pyramids; i ++) {
+        glm::mat4 model = glm::rotate(m_modelPyramids[i],
+                                      qDegreesToRadians(m_angle),
+                                      glm::vec3(0.0f, 1.0f, 1.0f));
+        batch->uploadStaticBuffer(m_modelBufferPyramid.get(),
+                                  i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4),
+                                  &model);
+    }
 
+    // 更新 uniform buffer3 缓冲区
     size_t offset = 0;
-    int shapeType = 2;
+    int shapeType = 1;
     float radius = 80.0;
     glm::vec2 circleCenter(0.0, 0.0);
     float thickness = 10.0;
     float smoothness = 1.0;
+    float angle = qDegreesToRadians(m_angle);
 
     offset = align(0, STD140_ALIGN_MAT4);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
@@ -615,35 +644,25 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
                                sizeof(float),
                                &smoothness);
 
-    for (int i = 0; i < m_Cubes; i ++) {
-        glm::mat4 model = glm::rotate(m_modelCubes[i],
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int) +
+                        sizeof(float) + sizeof(glm::vec2) + sizeof(float) +
+                       sizeof(float),
+                   STD140_ALIGN_FLOAT);
+    batch->updateDynamicBuffer(m_uniformBuffer3.get(),
+                               offset,
+                               sizeof(float),
+                               &angle);
+
+    // 更新 model beziers 顶点缓冲区
+    for (int i = 0; i < m_Beziers; i ++) {
+        glm::mat4 model = glm::rotate(m_modelBeziers[i],
                                       qDegreesToRadians(m_angle),
-                                      glm::vec3(1.0f, 1.0f, 0.0f));
-        batch->uploadStaticBuffer(m_modelBufferCube.get(),
+                                      glm::vec3(0.0f, 0.0f, 1.0f));
+        batch->uploadStaticBuffer(m_modelBufferBezier.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
     }
-
-    for (int i = 0; i < m_Pyramids; i ++) {
-        glm::mat4 model = glm::rotate(m_modelPyramids[i],
-                                      qDegreesToRadians(m_angle),
-                                      glm::vec3(0.0f, 1.0f, 1.0f));
-        batch->uploadStaticBuffer(m_modelBufferPyramid.get(),
-                                  i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4),
-                                  &model);
-    }
-
-    // for (int i = 0; i < m_Beziers; i ++) {
-    //     glm::mat4 model = glm::rotate(m_modelBeziers[i],
-    //                                   qDegreesToRadians(m_angle),
-    //                                   glm::vec3(0.0f, 1.0f, 0.0f));
-    //     batch->uploadStaticBuffer(m_modelBufferBezier.get(),
-    //                               i * sizeof(glm::mat4),
-    //                               sizeof(glm::mat4),
-    //                               &model);
-    // }
 
     cb->resourceUpdate(batch);
 
@@ -707,8 +726,10 @@ void Stage::hoverMoveEvent(QHoverEvent *event)
 {
     if (m_spaceButtonDown) {
 
-        int offsetX = (int)event->position().x() - m_mosePosition0.x() - this->width()/2;
-        int offsetY = this->height()/2 - (int)event->position().y() - m_mosePosition0.y();
+        int offsetX = (int)event->position().x() -
+                      m_mosePosition0.x() - this->width()/2;
+        int offsetY = this->height()/2 -
+                      (int)event->position().y() - m_mosePosition0.y();
 
         m_focus.setX(offsetX);
         m_focus.setY(offsetY);
