@@ -4,6 +4,7 @@
 #include <QCursor>
 #include <QRandomGenerator>
 #include <QtMath>
+#include <QPainter>
 
 #define STD140_ALIGN_INT   4
 #define STD140_ALIGN_FLOAT 4
@@ -24,8 +25,8 @@ static size_t align(size_t offset, size_t alignment) {
 }
 
 float vertexCube[] = {
-    //---- Position------   -----Color-----
-    // X       Y       Z    R     G     B
+    //---- Position------       -----Color-----
+    // X       Y       Z        R     G     B
 
     // Rectangle Vertices Attributes
    -100.0f, -100.0f, -100.0f,   1.0f, 0.0f, 0.0f,
@@ -73,8 +74,8 @@ float vertexCube[] = {
 
 float vertexPyramid[] = {
 
-    //---- Position------   -----Color-----
-    // X       Y       Z    R     G     B
+    //---- Position------      -----Color-----
+    // X       Y       Z       R     G     B
 
     // Triangle Vertices Attributes
    -100.0f, -100.0f,  100.0f,  1.0f, 0.0f, 0.0f,
@@ -104,14 +105,26 @@ float vertexPyramid[] = {
 
 
 float vertexBezier[] = {
-    //---- Position------   -----Color-----
-    // X       Y       Z    R     G     B
+    //---- Position------      -----Color-----
+    // X       Y       Z       R     G     B
    -100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
     100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
    -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
    -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
     100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
     100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+};
+
+
+float vertexRect[] = {
+    //---- Position------       -----Color-----     ---UV----
+    // X       Y       Z        R     G     B       U    V
+   -100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,    0.0, 0.0,
+    100.0f,  -100.0f,  0.0f,   0.0f, 1.0f, 0.0f,    1.0, 0.0,
+   -100.0f,   100.0f,  0.0f,   0.0f, 0.0f, 1.0f,    0.0, 1.0,
+   -100.0f,   100.0f,  0.0f,   0.0f, 0.0f, 1.0f,    0.0, 1.0,
+    100.0f,  -100.0f,  0.0f,   0.0f, 1.0f, 0.0f,    1.0, 0.0,
+    100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 1.0f,    1.0, 1.0,
 };
 
 
@@ -147,10 +160,23 @@ StageRenderer::StageRenderer()
         m_modelBeziers[i] = glm::translate(m_modelBeziers[i],
                                            glm::vec3(0.0f, 0.0f, 100.0f));
     }
+
+    m_modelRects = new glm::mat4[m_Rects];
+    for (int i = 0; i < m_Rects; i ++) {
+        m_modelRects[i] = glm::mat4(1.0f);
+        m_modelRects[i] = glm::translate(m_modelRects[i],
+                                        glm::vec3(-100.0f, 0.0f, 100.0f));
+    }
+
+    crateTextureImage();
 }
 
 StageRenderer::~StageRenderer()
 {
+    if (m_modelRects) {
+        delete m_modelRects;
+    }
+
     if (m_modelBeziers) {
         delete m_modelBeziers;
     }
@@ -217,6 +243,25 @@ int StageRenderer::createBezierBuffer()
 
     return 0;
 }
+
+int StageRenderer::createRectBuffer()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_vectexBufferRect.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                                QRhiBuffer::VertexBuffer,
+                                                sizeof(vertexRect)));
+    m_vectexBufferRect->create();
+
+    m_modelBufferRect.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                             QRhiBuffer::VertexBuffer,
+                                             m_Rects*sizeof(glm::mat4)));
+    m_modelBufferRect->create();
+
+    return 0;
+}
+
 
 int StageRenderer::createPipline1()
 {
@@ -451,6 +496,117 @@ int StageRenderer::createPipline3()
     return 1;
 }
 
+
+int StageRenderer::createPipline4()
+{
+    if (!m_rhi)
+        return -1;
+
+    m_pipeline4.reset(m_rhi->newGraphicsPipeline());
+
+    m_pipeline4->setShaderStages({
+        {
+            QRhiShaderStage::Vertex,
+            getShader(QLatin1String(":/AnymateLab/shaders/recttexture.vert.qsb"))
+        },
+        {
+            QRhiShaderStage::Fragment,
+            getShader(QLatin1String(":/AnymateLab/shaders/recttexture.frag.qsb"))
+        }
+    });
+
+    QRhiVertexInputLayout inputLayout;
+    inputLayout.setBindings(
+        {
+         { 8 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+         { 64, QRhiVertexInputBinding::PerInstance },
+         });
+
+    inputLayout.setAttributes(
+        {
+         // binding0
+         { 0, 0, QRhiVertexInputAttribute::Float3, 0                 },
+         { 0, 1, QRhiVertexInputAttribute::Float3, 3 * sizeof(float) },
+         { 0, 2, QRhiVertexInputAttribute::Float2, 6 * sizeof(float) },
+         // binding1
+         { 1, 3, QRhiVertexInputAttribute::Float4, 0 },
+         { 1, 4, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+         { 1, 5, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+         { 1, 6, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+         });
+
+    int blockSize = sizeof(glm::mat4) +
+                    sizeof(glm::mat4)
+        ;
+    int bufferSize = 0;
+    bufferSize = m_rhi->ubufAligned(blockSize) * m_uniformBufferBlockCount;
+    m_uniformBuffer4.reset(m_rhi->newBuffer(QRhiBuffer::Dynamic,
+                                            QRhiBuffer::UniformBuffer,
+                                            bufferSize));
+    m_uniformBuffer4->create();
+
+
+    // sampler
+    m_sampler.reset(m_rhi->newSampler(QRhiSampler::Linear,
+                                      QRhiSampler::Linear,
+                                      QRhiSampler::None,
+                                      QRhiSampler::ClampToEdge,
+                                      QRhiSampler::ClampToEdge));
+    m_sampler->create();
+
+    // texture
+    m_texture.reset(m_rhi->newTexture(QRhiTexture::RGBA8, TEXTURE_SIZE));
+    m_texture->create();
+
+    m_srb4.reset(m_rhi->newShaderResourceBindings());
+    m_srb4->setBindings({
+        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0,
+            m_shaderResourceStages,
+            m_uniformBuffer4.get(),
+            bufferSize),
+        QRhiShaderResourceBinding::sampledTexture(
+            1,
+            m_shaderResourceStages,
+            m_texture.get(),
+            m_sampler.get()),
+    });
+    m_srb4->create();
+
+    m_pipeline4->setVertexInputLayout(inputLayout);
+    m_pipeline4->setSampleCount(m_sampleCount);
+    m_pipeline4->setShaderResourceBindings(m_srb4.get());
+    m_pipeline4->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+    m_pipeline4->setDepthTest(true);
+    m_pipeline4->setDepthWrite(true);
+
+    // QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
+    // targetBlends[0].enable = true;
+    // targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
+    // targetBlends[0].dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    // targetBlends[0].opColor = QRhiGraphicsPipeline::Add;
+    // targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
+    // targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    // targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
+    // m_pipeline4->setTargetBlends(targetBlends.begin(), targetBlends.end());
+    m_pipeline4->create();
+
+    return 1;
+}
+
+void StageRenderer::crateTextureImage()
+{
+    m_textureImage = QImage(TEXTURE_SIZE, QImage::Format_RGBA8888);
+    const QRect r(QPoint(0, 0), TEXTURE_SIZE);
+    QPainter p(&m_textureImage);
+    p.fillRect(r, QGradient::AmourAmour);
+    QFont font;
+    font.setPointSize(24);
+    p.setFont(font);
+    p.drawText(r, QString("Hello World"));
+    p.end();
+}
+
 void StageRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (m_rhi != rhi()) {
@@ -460,10 +616,13 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
         createCubeBuffer();
         createPyramidBuffer();
         createBezierBuffer();
+        createRectBuffer();
 
         m_pipeline1.reset();
         m_pipeline2.reset();
         m_pipeline3.reset();
+        m_pipeline4.reset();
+
     }
 
     if (m_sampleCount != renderTarget()->sampleCount()) {
@@ -471,6 +630,7 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
         m_pipeline1.reset();
         m_pipeline2.reset();
         m_pipeline3.reset();
+        m_pipeline4.reset();
     }
 
     QRhiTexture *finalTex = m_sampleCount > 1 ? resolveTexture() : colorTexture();
@@ -479,6 +639,7 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
         m_pipeline1.reset();
         m_pipeline2.reset();
         m_pipeline3.reset();
+        m_pipeline4.reset();
     }
 
     if (!m_pipeline1) {
@@ -493,6 +654,10 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
         createPipline3();
     }
 
+    if (!m_pipeline4) {
+        createPipline4();
+    }
+
     QRhiResourceUpdateBatch *batch = m_rhi->nextResourceUpdateBatch();
 
     batch->uploadStaticBuffer(m_vectexBufferCube.get(), vertexCube);
@@ -503,6 +668,11 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
 
     batch->uploadStaticBuffer(m_vectexBufferBezier.get(), vertexBezier);
     batch->uploadStaticBuffer(m_modelBufferBezier.get(), m_modelBeziers);
+
+    batch->uploadStaticBuffer(m_vectexBufferRect.get(), vertexRect);
+    batch->uploadStaticBuffer(m_modelBufferRect.get(), m_modelRects);
+
+    batch->uploadTexture(m_texture.get(), m_textureImage);
 
     cb->resourceUpdate(batch);
 
@@ -657,8 +827,34 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     for (int i = 0; i < m_Beziers; i ++) {
         glm::mat4 model = glm::rotate(m_modelBeziers[i],
                                       qDegreesToRadians(m_angle),
-                                      glm::vec3(0.0f, 0.0f, 1.0f));
+                                      glm::vec3(0.0f, 1.0f, 1.0f));
         batch->uploadStaticBuffer(m_modelBufferBezier.get(),
+                                  i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4),
+                                  &model);
+    }
+
+
+
+    // 更新 uniform buffer4 缓冲区
+    offset = align(0, STD140_ALIGN_MAT4);
+    batch->updateDynamicBuffer(m_uniformBuffer4.get(),
+                               offset,
+                               sizeof(glm::mat4),
+                               m_view.constData());
+
+    offset = align(sizeof(glm::mat4), STD140_ALIGN_MAT4);
+    batch->updateDynamicBuffer(m_uniformBuffer4.get(),
+                               offset,
+                               sizeof(glm::mat4),
+                               m_projection.constData());
+
+    // 更新 model rects 顶点缓冲区
+    for (int i = 0; i < m_Rects; i ++) {
+        glm::mat4 model = glm::rotate(m_modelRects[i],
+                                      qDegreesToRadians(m_angle),
+                                      glm::vec3(0.0f, 0.0f, 1.0f));
+        batch->uploadStaticBuffer(m_modelBufferRect.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
@@ -698,6 +894,18 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     };
     cb->setVertexInput(0, 2, inputBindings3);
     cb->draw(6, m_Beziers);
+
+
+    // 使用4号管线绘制贴图矩形
+    cb->setGraphicsPipeline(m_pipeline4.get());
+    cb->setShaderResources(m_srb4.get());
+    // 绑定顶点属性缓冲区
+    const QRhiCommandBuffer::VertexInput inputBindings4[] = {
+        { m_vectexBufferRect.get(), 0 },
+        { m_modelBufferRect.get(), 0 }
+    };
+    cb->setVertexInput(0, 2, inputBindings4);
+    cb->draw(6, m_Rects);
 
     cb->endPass();
 }

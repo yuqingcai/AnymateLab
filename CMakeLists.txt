@@ -28,6 +28,8 @@ qt_add_qml_module(appAnymateLab
         RESOURCES
         RESOURCES shaders/bezier.vert
         RESOURCES shaders/bezier.frag
+        RESOURCES shaders/recttexture.vert
+        RESOURCES shaders/recttexture.frag
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -85,6 +87,16 @@ qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
     FILES
         shaders/bezier.vert
         shaders/bezier.frag
+)
+
+qt_add_shaders(appAnymateLab "appAnymateLab_recttexture_shaders"
+    # PRECOMPILE
+    # OPTIMIZED
+    PREFIX
+        /AnymateLab
+    FILES
+        shaders/recttexture.vert
+        shaders/recttexture.frag
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)

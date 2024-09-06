@@ -20,13 +20,13 @@ void drawRectangle()
     vec4 backgroundColor = vec4(1.0, 1.0, 1.0, 1.0);
 
     if (abs(localCoord.y - center.y) > 80 &&
-        abs(localCoord.y - center.y) < 81 &&
-        abs(localCoord.x - center.x) <= 81) {
+        abs(localCoord.y - center.y) < 83 &&
+        abs(localCoord.x - center.x) <= 83) {
         fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
     else if (abs(localCoord.x - center.x) > 80 &&
-             abs(localCoord.x - center.x) < 81 &&
-             abs(localCoord.y - center.y) <= 81) {
+             abs(localCoord.x - center.x) < 83 &&
+             abs(localCoord.y - center.y) <= 83) {
         fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
     else {

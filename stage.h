@@ -7,6 +7,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+static const QSize TEXTURE_SIZE(512, 512);
+
 class StageRenderer : public QQuickRhiItemRenderer
 {
 public:
@@ -20,10 +22,14 @@ private:
     int createCubeBuffer();
     int createPyramidBuffer();
     int createBezierBuffer();
+    int createRectBuffer();
 
     int createPipline1();
     int createPipline2();
     int createPipline3();
+    int createPipline4();
+
+    void crateTextureImage();
 
     QRhi *m_rhi = nullptr;
     int m_sampleCount = 4;
@@ -53,6 +59,17 @@ private:
     int m_Beziers = 1;
     glm::mat4* m_modelBeziers;
 
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline4;
+    std::unique_ptr<QRhiShaderResourceBindings> m_srb4;
+    std::unique_ptr<QRhiBuffer> m_uniformBuffer4;
+    std::unique_ptr<QRhiBuffer> m_vectexBufferRect;
+    std::unique_ptr<QRhiBuffer> m_modelBufferRect;
+    std::unique_ptr<QRhiSampler> m_sampler;
+    std::unique_ptr<QRhiTexture> m_texture;
+    int m_Rects = 1;
+    glm::mat4* m_modelRects;
+    QImage m_textureImage;
+
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
 
@@ -71,6 +88,7 @@ private:
         QRhiShaderResourceBinding::TessellationEvaluationStage |
         QRhiShaderResourceBinding::ComputeStage |
         QRhiShaderResourceBinding::GeometryStage;
+
 };
 
 class Stage: public QQuickRhiItem
