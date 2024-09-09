@@ -1,4 +1,4 @@
-#include "stage.h"
+#include "cubes.h"
 #include "features.h"
 #include <QFile>
 #include <QCursor>
@@ -12,6 +12,8 @@
 #define STD140_ALIGN_VEC3 16
 #define STD140_ALIGN_VEC4 16
 #define STD140_ALIGN_MAT4 64
+
+static const QSize TEXTURE_SIZE(512, 512);
 
 static QShader getShader(const QString &name)
 {
@@ -128,7 +130,7 @@ float vertexRect[] = {
 };
 
 
-StageRenderer::StageRenderer()
+CubesRenderer::CubesRenderer()
 {
     m_modelCubes = new glm::mat4[m_Cubes];
     for (int i = 0; i < m_Cubes; i ++) {
@@ -171,7 +173,7 @@ StageRenderer::StageRenderer()
     crateTextureImage();
 }
 
-StageRenderer::~StageRenderer()
+CubesRenderer::~CubesRenderer()
 {
     if (m_modelRects) {
         delete m_modelRects;
@@ -190,7 +192,7 @@ StageRenderer::~StageRenderer()
 }
 
 
-int StageRenderer::createCubeBuffer()
+int CubesRenderer::createCubeBuffer()
 {
     if (!m_rhi)
         return -1;
@@ -208,7 +210,7 @@ int StageRenderer::createCubeBuffer()
     return 0;
 }
 
-int StageRenderer::createPyramidBuffer()
+int CubesRenderer::createPyramidBuffer()
 {
     if (!m_rhi)
         return -1;
@@ -226,7 +228,7 @@ int StageRenderer::createPyramidBuffer()
     return 0;
 }
 
-int StageRenderer::createBezierBuffer()
+int CubesRenderer::createBezierBuffer()
 {
     if (!m_rhi)
         return -1;
@@ -244,7 +246,7 @@ int StageRenderer::createBezierBuffer()
     return 0;
 }
 
-int StageRenderer::createRectBuffer()
+int CubesRenderer::createRectBuffer()
 {
     if (!m_rhi)
         return -1;
@@ -263,7 +265,7 @@ int StageRenderer::createRectBuffer()
 }
 
 
-int StageRenderer::createPipline1()
+int CubesRenderer::createPipline1()
 {
     if (!m_rhi)
         return -1;
@@ -342,7 +344,7 @@ int StageRenderer::createPipline1()
     return 0;
 }
 
-int StageRenderer::createPipline2()
+int CubesRenderer::createPipline2()
 {
     if (!m_rhi)
         return -1;
@@ -410,7 +412,7 @@ int StageRenderer::createPipline2()
     return 1;
 }
 
-int StageRenderer::createPipline3()
+int CubesRenderer::createPipline3()
 {
     if (!m_rhi)
         return -1;
@@ -497,7 +499,7 @@ int StageRenderer::createPipline3()
 }
 
 
-int StageRenderer::createPipline4()
+int CubesRenderer::createPipline4()
 {
     if (!m_rhi)
         return -1;
@@ -594,7 +596,7 @@ int StageRenderer::createPipline4()
     return 1;
 }
 
-void StageRenderer::crateTextureImage()
+void CubesRenderer::crateTextureImage()
 {
     m_textureImage = QImage(TEXTURE_SIZE, QImage::Format_RGBA8888);
     const QRect r(QPoint(0, 0), TEXTURE_SIZE);
@@ -607,7 +609,7 @@ void StageRenderer::crateTextureImage()
     p.end();
 }
 
-void StageRenderer::initialize(QRhiCommandBuffer *cb)
+void CubesRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (m_rhi != rhi()) {
         m_rhi = rhi();
@@ -678,7 +680,7 @@ void StageRenderer::initialize(QRhiCommandBuffer *cb)
 
 }
 
-void StageRenderer::render(QRhiCommandBuffer *cb)
+void CubesRenderer::render(QRhiCommandBuffer *cb)
 {
     const QSize outputSize = renderTarget()->pixelSize();
     m_projection = m_rhi->clipSpaceCorrMatrix();
@@ -910,9 +912,9 @@ void StageRenderer::render(QRhiCommandBuffer *cb)
     cb->endPass();
 }
 
-void StageRenderer::synchronize(QQuickRhiItem *rhiItem)
+void CubesRenderer::synchronize(QQuickRhiItem *rhiItem)
 {
-    Stage *item = static_cast<Stage *>(rhiItem);
+    Cubes *item = static_cast<Cubes *>(rhiItem);
     if (item->angle() != m_angle)
         m_angle = item->angle();
 
@@ -922,7 +924,7 @@ void StageRenderer::synchronize(QQuickRhiItem *rhiItem)
     m_focus = item->getFocus();
 }
 
-Stage::Stage()
+Cubes::Cubes()
 {
     setFocusPolicy(Qt::ClickFocus);
     setAcceptHoverEvents(true);
@@ -930,7 +932,7 @@ Stage::Stage()
     setFlag(ItemAcceptsInputMethod, true);
 }
 
-void Stage::hoverMoveEvent(QHoverEvent *event)
+void Cubes::hoverMoveEvent(QHoverEvent *event)
 {
     if (m_spaceButtonDown) {
 
@@ -947,7 +949,7 @@ void Stage::hoverMoveEvent(QHoverEvent *event)
     return QQuickRhiItem::hoverMoveEvent(event);
 }
 
-void Stage::mousePressEvent(QMouseEvent *event)
+void Cubes::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         if (!m_leftButtonDown) {
@@ -959,7 +961,7 @@ void Stage::mousePressEvent(QMouseEvent *event)
 }
 
 
-void Stage::mouseReleaseEvent(QMouseEvent *event)
+void Cubes::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         if (m_leftButtonDown) {
@@ -970,7 +972,7 @@ void Stage::mouseReleaseEvent(QMouseEvent *event)
     return QQuickRhiItem::mouseReleaseEvent(event);
 }
 
-void Stage::wheelEvent(QWheelEvent *event)
+void Cubes::wheelEvent(QWheelEvent *event)
 {
     // qDebug() << "Mouse wheel delta: " << event->angleDelta();
     if (event->angleDelta().y() > 0) {
@@ -983,7 +985,7 @@ void Stage::wheelEvent(QWheelEvent *event)
 }
 
 
-void Stage::keyPressEvent(QKeyEvent *event)
+void Cubes::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Up) {
         m_orthoY -= 100.0;
@@ -1007,7 +1009,7 @@ void Stage::keyPressEvent(QKeyEvent *event)
     return QQuickRhiItem::keyPressEvent(event);
 }
 
-void Stage::keyReleaseEvent(QKeyEvent *event)
+void Cubes::keyReleaseEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Space) {
         if (m_spaceButtonDown) {
@@ -1019,18 +1021,18 @@ void Stage::keyReleaseEvent(QKeyEvent *event)
     return QQuickRhiItem::keyReleaseEvent(event);
 }
 
-QQuickRhiItemRenderer* Stage::createRenderer()
+QQuickRhiItemRenderer* Cubes::createRenderer()
 {
-    return new StageRenderer();
+    return new CubesRenderer();
 }
 
 
-float Stage::angle() const
+float Cubes::angle() const
 {
     return m_angle;
 }
 
-void Stage::setAngle(float a)
+void Cubes::setAngle(float a)
 {
     if (m_angle == a)
         return;
@@ -1041,23 +1043,23 @@ void Stage::setAngle(float a)
 }
 
 
-float Stage::getOrthoX()
+float Cubes::getOrthoX()
 {
     return m_orthoX;
 }
 
 
-float Stage::getOrthoY()
+float Cubes::getOrthoY()
 {
     return m_orthoY;
 }
 
-float Stage::getZoom()
+float Cubes::getZoom()
 {
     return m_zoom;
 }
 
-QPointF& Stage::getFocus()
+QPointF& Cubes::getFocus()
 {
     return m_focus;
 }

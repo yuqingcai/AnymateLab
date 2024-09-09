@@ -1,5 +1,5 @@
-#ifndef STAGE_H
-#define STAGE_H
+#ifndef CUBES_H
+#define CUBES_H
 
 #include <QQuickRhiItem>
 #include <rhi/qrhi.h>
@@ -7,13 +7,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-static const QSize TEXTURE_SIZE(512, 512);
-
-class StageRenderer : public QQuickRhiItemRenderer
+class CubesRenderer : public QQuickRhiItemRenderer
 {
 public:
-    StageRenderer();
-    ~StageRenderer();
+    CubesRenderer();
+    ~CubesRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
@@ -91,14 +89,14 @@ private:
 
 };
 
-class Stage: public QQuickRhiItem
+class Cubes: public QQuickRhiItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Stage)
+    QML_NAMED_ELEMENT(Cubes)
     Q_PROPERTY(float angle READ angle WRITE setAngle NOTIFY angleChanged)
 
 public:
-    Stage();
+    Cubes();
     QQuickRhiItemRenderer *createRenderer() override;
 
     float angle() const;
@@ -133,4 +131,4 @@ private:
     QPoint m_mosePosition1 = {0, 0};
 };
 
-#endif // STAGE_H
+#endif // CUBES_H

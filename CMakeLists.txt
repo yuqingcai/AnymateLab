@@ -8,12 +8,15 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
+qt_add_resources(RESOURCES resources.qrc)
+
 qt_add_executable(appAnymateLab
-    stage.cpp
-    stage.h
+    cubes.cpp
+    cubes.h
     main.cpp
     features.cpp
     features.h
+    ${RESOURCES}
 )
 
 qt_add_qml_module(appAnymateLab
@@ -23,13 +26,10 @@ qt_add_qml_module(appAnymateLab
         Main.qml
         QML_FILES ProjectManager.qml
         QML_FILES MainMenu.qml
-        RESOURCES
-        RESOURCES
-        RESOURCES
-        RESOURCES shaders/bezier.vert
-        RESOURCES shaders/bezier.frag
-        RESOURCES shaders/recttexture.vert
-        RESOURCES shaders/recttexture.frag
+        SOURCES motion.cpp
+        SOURCES motion.h
+        SOURCES cubes.cpp
+        SOURCES cubes.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -59,19 +59,7 @@ install(TARGETS appAnymateLab
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-qt_add_shaders(appAnymateLab "appAnymateLab_color_shaders"
-    # PRECOMPILE
-    # OPTIMIZED
-    PREFIX
-        /AnymateLab
-    FILES
-        shaders/color.vert
-        shaders/color.frag
-)
-
 qt_add_shaders(appAnymateLab "appAnymateLab_stage_shaders"
-    # PRECOMPILE
-    # OPTIMIZED
     PREFIX
         /AnymateLab
     FILES
@@ -80,8 +68,6 @@ qt_add_shaders(appAnymateLab "appAnymateLab_stage_shaders"
 )
 
 qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
-    # PRECOMPILE
-    # OPTIMIZED
     PREFIX
         /AnymateLab
     FILES
@@ -90,13 +76,19 @@ qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
 )
 
 qt_add_shaders(appAnymateLab "appAnymateLab_recttexture_shaders"
-    # PRECOMPILE
-    # OPTIMIZED
     PREFIX
         /AnymateLab
     FILES
         shaders/recttexture.vert
         shaders/recttexture.frag
+)
+
+qt_add_shaders(appAnymateLab "appAnymateLab_motion_shaders"
+    PREFIX
+        /AnymateLab
+    FILES
+        shaders/motion.vert
+        shaders/motion.frag
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
