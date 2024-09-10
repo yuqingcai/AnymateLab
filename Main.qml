@@ -129,7 +129,26 @@ ApplicationWindow {
             //     }
             // }
 
-            Motion {
+            // Motion {
+            //     SplitView.fillWidth: true
+            //     SplitView.fillHeight: true
+            //     sampleCount: 4 // normal MSAA, 8: high MSAA
+            //     // colorBufferFormat:RGBA8
+            //     mirrorVertically: false
+            //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     alphaBlending: true
+
+            //     NumberAnimation on angle {
+            //         from: 0
+            //         to: 360
+            //         duration: 3000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            // }
+
+            Curve {
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
                 sampleCount: 4 // normal MSAA, 8: high MSAA

@@ -41,13 +41,6 @@ private:
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
 
-    float m_angle = 0.0f;
-    float m_alpha = 1.0f;
-    float m_orthoX = 0.0f;
-    float m_orthoY = 0.0f;
-    float m_zoom = 1.0f;
-    QPointF m_focus = {0.0f, 0.0f};
-
     int m_uniformBufferBlockCount = 1;
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
@@ -56,6 +49,12 @@ private:
         QRhiShaderResourceBinding::TessellationEvaluationStage |
         QRhiShaderResourceBinding::ComputeStage |
         QRhiShaderResourceBinding::GeometryStage;
+
+    float m_angle = 0.0f;
+    float m_orthoX = 0.0f;
+    float m_orthoY = 0.0f;
+    float m_zoom = 1.0f;
+    QPointF m_focus = {0.0f, 0.0f};
 
 };
 
@@ -101,4 +100,4 @@ private:
     QPoint m_mosePosition1 = {0, 0};
 };
 
-#endif // CUBES_H
+#endif // MOTION_H

@@ -30,6 +30,8 @@ qt_add_qml_module(appAnymateLab
         SOURCES motion.h
         SOURCES cubes.cpp
         SOURCES cubes.h
+        SOURCES curve.cpp
+        SOURCES curve.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -59,20 +61,20 @@ install(TARGETS appAnymateLab
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-qt_add_shaders(appAnymateLab "appAnymateLab_stage_shaders"
+qt_add_shaders(appAnymateLab "appAnymateLab_cube_shaders"
     PREFIX
         /AnymateLab
     FILES
-        shaders/stage.vert
-        shaders/stage.frag
+        shaders/cube.vert
+        shaders/cube.frag
 )
 
-qt_add_shaders(appAnymateLab "appAnymateLab_bezier_shaders"
+qt_add_shaders(appAnymateLab "appAnymateLab_shape_shaders"
     PREFIX
         /AnymateLab
     FILES
-        shaders/bezier.vert
-        shaders/bezier.frag
+        shaders/shape.vert
+        shaders/shape.frag
 )
 
 qt_add_shaders(appAnymateLab "appAnymateLab_recttexture_shaders"
@@ -91,4 +93,11 @@ qt_add_shaders(appAnymateLab "appAnymateLab_motion_shaders"
         shaders/motion.frag
 )
 
+qt_add_shaders(appAnymateLab "appAnymateLab_curve_shaders"
+    PREFIX
+        /AnymateLab
+    FILES
+        shaders/curve.vert
+        shaders/curve.frag
+)
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)

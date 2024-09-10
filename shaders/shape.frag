@@ -31,7 +31,6 @@ void drawRectangle()
     }
     else {
         discard;
-        // fragColor = backgroundColor;
     }
 }
 
@@ -47,14 +46,14 @@ void drawCircle()
     float edge0 = innerEdge + smoothness;
     float edge1 = outerEdge - smoothness;
 
-    if (abs(localCoord.y - center.y) > 80 &&
-            abs(localCoord.y - center.y) < 81 &&
-            abs(localCoord.x - center.x) <= 81) {
+    if (abs(localCoord.y - center.y) > radius + thickness &&
+            abs(localCoord.y - center.y) <= radius + thickness + 2 &&
+            abs(localCoord.x - center.x) <= radius + thickness + 2) {
         fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
-    else if (abs(localCoord.x - center.x) > 80 &&
-             abs(localCoord.x - center.x) < 81 &&
-             abs(localCoord.y - center.y) <= 81) {
+    else if (abs(localCoord.x - center.x) > radius + thickness &&
+             abs(localCoord.x - center.x) <= radius + thickness + 2 &&
+             abs(localCoord.y - center.y) <= radius + thickness + 2) {
         fragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
     else if (dist >= innerEdge && dist <= outerEdge) {
@@ -69,7 +68,6 @@ void drawCircle()
     }
     else {
         discard;
-        // fragColor = backgroundColor;
     }
 }
 

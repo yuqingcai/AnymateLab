@@ -106,15 +106,15 @@ float vertexPyramid[] = {
 };
 
 
-float vertexBezier[] = {
+float vertexShape[] = {
     //---- Position------      -----Color-----
     // X       Y       Z       R     G     B
-   -100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
-    100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
-   -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
-   -100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
-    100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
-    100.0f,   100.0f,  0.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,  -100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,  -100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,   100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
+   -100.0f,   100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,  -100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
+    100.0f,   100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
 };
 
 
@@ -156,11 +156,11 @@ CubesRenderer::CubesRenderer()
                                             glm::vec3(ntX, ntY, 0));
     }
 
-    m_modelBeziers = new glm::mat4[m_Beziers];
-    for (int i = 0; i < m_Beziers; i ++) {
-        m_modelBeziers[i] = glm::mat4(1.0f);
-        m_modelBeziers[i] = glm::translate(m_modelBeziers[i],
-                                           glm::vec3(0.0f, 0.0f, 100.0f));
+    m_modelShapes = new glm::mat4[m_Shapes];
+    for (int i = 0; i < m_Shapes; i ++) {
+        m_modelShapes[i] = glm::mat4(1.0f);
+        m_modelShapes[i] = glm::translate(m_modelShapes[i],
+                                          glm::vec3(0.0f, 0.0f, 100.0f));
     }
 
     m_modelRects = new glm::mat4[m_Rects];
@@ -179,8 +179,8 @@ CubesRenderer::~CubesRenderer()
         delete m_modelRects;
     }
 
-    if (m_modelBeziers) {
-        delete m_modelBeziers;
+    if (m_modelShapes) {
+        delete m_modelShapes;
     }
 
     if (m_modelPyramids) {
@@ -233,15 +233,15 @@ int CubesRenderer::createBezierBuffer()
     if (!m_rhi)
         return -1;
 
-    m_vectexBufferBezier.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
-                                                QRhiBuffer::VertexBuffer,
-                                                sizeof(vertexBezier)));
-    m_vectexBufferBezier->create();
-
-    m_modelBufferBezier.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+    m_vectexBufferShape.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
                                                QRhiBuffer::VertexBuffer,
-                                               m_Beziers*sizeof(glm::mat4)));
-    m_modelBufferBezier->create();
+                                               sizeof(vertexShape)));
+    m_vectexBufferShape->create();
+
+    m_modelBufferShape.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
+                                              QRhiBuffer::VertexBuffer,
+                                              m_Shapes*sizeof(glm::mat4)));
+    m_modelBufferShape->create();
 
     return 0;
 }
@@ -275,11 +275,11 @@ int CubesRenderer::createPipline1()
     m_pipeline1->setShaderStages({
         {
             QRhiShaderStage::Vertex,
-            getShader(QLatin1String(":/AnymateLab/shaders/stage.vert.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/cube.vert.qsb"))
         },
         {
             QRhiShaderStage::Fragment,
-            getShader(QLatin1String(":/AnymateLab/shaders/stage.frag.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/cube.frag.qsb"))
         }
     });
 
@@ -354,11 +354,11 @@ int CubesRenderer::createPipline2()
     m_pipeline2->setShaderStages({
         {
             QRhiShaderStage::Vertex,
-            getShader(QLatin1String(":/AnymateLab/shaders/stage.vert.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/cube.vert.qsb"))
         },
         {
             QRhiShaderStage::Fragment,
-            getShader(QLatin1String(":/AnymateLab/shaders/stage.frag.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/cube.frag.qsb"))
         }
     });
 
@@ -422,11 +422,11 @@ int CubesRenderer::createPipline3()
     m_pipeline3->setShaderStages({
         {
             QRhiShaderStage::Vertex,
-            getShader(QLatin1String(":/AnymateLab/shaders/bezier.vert.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/shape.vert.qsb"))
         },
         {
             QRhiShaderStage::Fragment,
-            getShader(QLatin1String(":/AnymateLab/shaders/bezier.frag.qsb"))
+            getShader(QLatin1String(":/AnymateLab/shaders/shape.frag.qsb"))
         }
     });
 
@@ -582,15 +582,15 @@ int CubesRenderer::createPipline4()
     m_pipeline4->setDepthTest(true);
     m_pipeline4->setDepthWrite(true);
 
-    // QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
-    // targetBlends[0].enable = true;
-    // targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
-    // targetBlends[0].dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    // targetBlends[0].opColor = QRhiGraphicsPipeline::Add;
-    // targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
-    // targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    // targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
-    // m_pipeline4->setTargetBlends(targetBlends.begin(), targetBlends.end());
+    QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
+    targetBlends[0].enable = true;
+    targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
+    targetBlends[0].dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opColor = QRhiGraphicsPipeline::Add;
+    targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
+    targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
+    m_pipeline4->setTargetBlends(targetBlends.begin(), targetBlends.end());
     m_pipeline4->create();
 
     return 1;
@@ -607,6 +607,7 @@ void CubesRenderer::crateTextureImage()
     p.setFont(font);
     p.drawText(r, QString("Hello World"));
     p.end();
+    m_textureImage = m_textureImage.mirrored(false, true);
 }
 
 void CubesRenderer::initialize(QRhiCommandBuffer *cb)
@@ -668,8 +669,8 @@ void CubesRenderer::initialize(QRhiCommandBuffer *cb)
     batch->uploadStaticBuffer(m_vectexBufferPyramid.get(), vertexPyramid);
     batch->uploadStaticBuffer(m_modelBufferPyramid.get(), m_modelPyramids);
 
-    batch->uploadStaticBuffer(m_vectexBufferBezier.get(), vertexBezier);
-    batch->uploadStaticBuffer(m_modelBufferBezier.get(), m_modelBeziers);
+    batch->uploadStaticBuffer(m_vectexBufferShape.get(), vertexShape);
+    batch->uploadStaticBuffer(m_modelBufferShape.get(), m_modelShapes);
 
     batch->uploadStaticBuffer(m_vectexBufferRect.get(), vertexRect);
     batch->uploadStaticBuffer(m_modelBufferRect.get(), m_modelRects);
@@ -762,7 +763,7 @@ void CubesRenderer::render(QRhiCommandBuffer *cb)
 
     // 更新 uniform buffer3 缓冲区
     size_t offset = 0;
-    int shapeType = 1;
+    int shapeType = 2;
     float radius = 80.0;
     glm::vec2 circleCenter(0.0, 0.0);
     float thickness = 10.0;
@@ -817,7 +818,7 @@ void CubesRenderer::render(QRhiCommandBuffer *cb)
                                &smoothness);
 
     offset = align(sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(int) +
-                        sizeof(float) + sizeof(glm::vec2) + sizeof(float) +
+                       sizeof(float) + sizeof(glm::vec2) + sizeof(float) +
                        sizeof(float),
                    STD140_ALIGN_FLOAT);
     batch->updateDynamicBuffer(m_uniformBuffer3.get(),
@@ -825,18 +826,16 @@ void CubesRenderer::render(QRhiCommandBuffer *cb)
                                sizeof(float),
                                &angle);
 
-    // 更新 model beziers 顶点缓冲区
-    for (int i = 0; i < m_Beziers; i ++) {
-        glm::mat4 model = glm::rotate(m_modelBeziers[i],
+    // 更新 model shapes 顶点缓冲区
+    for (int i = 0; i < m_Shapes; i ++) {
+        glm::mat4 model = glm::rotate(m_modelShapes[i],
                                       qDegreesToRadians(m_angle),
                                       glm::vec3(0.0f, 1.0f, 1.0f));
-        batch->uploadStaticBuffer(m_modelBufferBezier.get(),
+        batch->uploadStaticBuffer(m_modelBufferShape.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
     }
-
-
 
     // 更新 uniform buffer4 缓冲区
     offset = align(0, STD140_ALIGN_MAT4);
@@ -891,11 +890,11 @@ void CubesRenderer::render(QRhiCommandBuffer *cb)
     cb->setShaderResources(m_srb3.get());
     // 绑定顶点属性缓冲区
     const QRhiCommandBuffer::VertexInput inputBindings3[] = {
-        { m_vectexBufferBezier.get(), 0 },
-        { m_modelBufferBezier.get(), 0 }
+        { m_vectexBufferShape.get(), 0 },
+        { m_modelBufferShape.get(), 0 }
     };
     cb->setVertexInput(0, 2, inputBindings3);
-    cb->draw(6, m_Beziers);
+    cb->draw(6, m_Shapes);
 
 
     // 使用4号管线绘制贴图矩形

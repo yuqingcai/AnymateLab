@@ -1,5 +1,5 @@
-#ifndef CUBES_H
-#define CUBES_H
+#ifndef CURVE_H
+#define CURVE_H
 
 #include <QQuickRhiItem>
 #include <rhi/qrhi.h>
@@ -7,66 +7,35 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class CubesRenderer : public QQuickRhiItemRenderer
+class CurveRenderer : public QQuickRhiItemRenderer
 {
 public:
-    CubesRenderer();
-    ~CubesRenderer();
+    CurveRenderer();
+    ~CurveRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
 
 private:
-    int createCubeBuffer();
-    int createPyramidBuffer();
-    int createBezierBuffer();
-    int createRectBuffer();
-
-    int createPipline1();
-    int createPipline2();
-    int createPipline3();
-    int createPipline4();
-
+    int createBuffer();
+    int createPipline();
     void crateTextureImage();
 
     QRhi *m_rhi = nullptr;
     int m_sampleCount = 4;
     QRhiTexture::Format m_textureFormat = QRhiTexture::RGBA8;
 
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline1;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb1;
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer1;
-    std::unique_ptr<QRhiBuffer> m_vectexBufferCube;
-    std::unique_ptr<QRhiBuffer> m_modelBufferCube;
-    int m_Cubes = 4000;
-    glm::mat4* m_modelCubes;
-
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline2;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb2;
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer2;
-    std::unique_ptr<QRhiBuffer> m_vectexBufferPyramid;
-    std::unique_ptr<QRhiBuffer> m_modelBufferPyramid;
-    int m_Pyramids = 4000;
-    glm::mat4* m_modelPyramids;
-
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline3;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb3;
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer3;
-    std::unique_ptr<QRhiBuffer> m_vectexBufferShape;
-    std::unique_ptr<QRhiBuffer> m_modelBufferShape;
-    int m_Shapes = 1;
-    glm::mat4* m_modelShapes;
-
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline4;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb4;
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer4;
-    std::unique_ptr<QRhiBuffer> m_vectexBufferRect;
-    std::unique_ptr<QRhiBuffer> m_modelBufferRect;
+    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline;
+    std::unique_ptr<QRhiShaderResourceBindings> m_srb;
+    std::unique_ptr<QRhiBuffer> m_uniformBuffer;
+    std::unique_ptr<QRhiBuffer> m_vectexBuffer;
+    std::unique_ptr<QRhiBuffer> m_modelBuffer;
     std::unique_ptr<QRhiSampler> m_sampler;
-    std::unique_ptr<QRhiTexture> m_texture;
     int m_Rects = 1;
-    glm::mat4* m_modelRects;
+    glm::mat4* m_models;
     QImage m_textureImage;
+    int m_pointCount = 4;
+    glm::vec2* m_points;
 
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
@@ -85,16 +54,17 @@ private:
     float m_orthoY = 0.0f;
     float m_zoom = 1.0f;
     QPointF m_focus = {0.0f, 0.0f};
+
 };
 
-class Cubes: public QQuickRhiItem
+class Curve: public QQuickRhiItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Cubes)
+    QML_NAMED_ELEMENT(Curve)
     Q_PROPERTY(float angle READ angle WRITE setAngle NOTIFY angleChanged)
 
 public:
-    Cubes();
+    Curve();
     QQuickRhiItemRenderer *createRenderer() override;
 
     float angle() const;
@@ -129,4 +99,4 @@ private:
     QPoint m_mosePosition1 = {0, 0};
 };
 
-#endif // CUBES_H
+#endif // CURVE_H
