@@ -21,7 +21,6 @@ void main(void)
         fragColor = vec4(1.0, 1.0, 0.0, 1.0);
         return;
     }
-
     if (distance(localCoord.xy, p[1]) < 0.02){
         fragColor = vec4(1.0, 1.0, 0.0, 1.0);
         return;
@@ -50,7 +49,5 @@ void main(void)
         }
     }
 
-    // else {
-    //     fragColor = vec4(0.5, 0.5, 0.5, 1.0);
-    // }
+    discard;
 }
