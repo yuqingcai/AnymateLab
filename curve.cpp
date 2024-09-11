@@ -24,14 +24,17 @@ static size_t align(size_t offset, size_t alignment) {
     return (offset + alignment - 1) & ~(alignment - 1);
 }
 
-void CurveRenderer::createVertices()
+void CurveRenderer::createBezierVertices(int segments)
 {
-    m_vertices = new float[m_segments * m_vertexAttributeStrip * 2];
+    m_segments = segments;
 
-    glm::vec2 p0(-100.0,  -100.0);
-    glm::vec2 p1(  0.0,  -100.0);
-    glm::vec2 p2(  0.0,  100.0);
-    glm::vec2 p3( 100.0,  100.0);
+    m_verticesCount = m_segments * 2;
+    m_vertices = new float[m_verticesCount * m_vertexAttributeStrip];
+
+    glm::vec2 p0(-100.0,  0.0);
+    glm::vec2 p1(-100.0,  50.0);
+    glm::vec2 p2( -50.0, 100.0);
+    glm::vec2 p3(  0.0,  100.0);
 
     for (int i = 0; i < m_segments; i ++) {
 
@@ -55,6 +58,89 @@ void CurveRenderer::createVertices()
         m_vertices[i * m_vertexAttributeStrip * 2 + 2] = right.x;
         m_vertices[i * m_vertexAttributeStrip * 2 + 3] = right.y;
     }
+}
+
+void CurveRenderer::createRectangleVertices(int segments)
+{
+    m_segments = segments;
+    m_verticesCount = 17;
+
+    m_vertices = new float[m_segments * m_vertexAttributeStrip * 2];
+
+    glm::vec2 p0(-50.0,  50.0);
+    glm::vec2 p1( 50.0,  50.0);
+    glm::vec2 p2( 50.0, -50.0);
+    glm::vec2 p3(-50.0, -50.0);
+
+    float w = m_width / 2.0;
+
+    // v0
+    m_vertices[0] = p0.x - w;
+    m_vertices[1] = p0.y + w;
+
+    // v1
+    m_vertices[2] = p0.x - w;
+    m_vertices[3] = p0.y - w;
+
+    // v2
+    m_vertices[4] = p1.x - w;
+    m_vertices[5] = p1.y + w;
+
+    // v3
+    m_vertices[6] = p1.x - w;
+    m_vertices[7] = p1.y - w;
+
+    // v4
+    m_vertices[8] = p1.x + w;
+    m_vertices[9] = p1.y + w;
+
+    // v5
+    m_vertices[10] = p1.x - w;
+    m_vertices[11] = p1.y - w;
+
+    // v6
+    m_vertices[12] = p2.x + w;
+    m_vertices[13] = p2.y + w;
+
+    // v7
+    m_vertices[14] = p2.x - w;
+    m_vertices[15] = p2.y + w;
+
+    // v8
+    m_vertices[16] = p2.x + w;
+    m_vertices[17] = p2.y - w;
+
+    // v9
+    m_vertices[18] = p2.x - w;
+    m_vertices[19] = p2.y + w;
+
+    // v10
+    m_vertices[20] = p3.x + w;
+    m_vertices[21] = p3.y - w;
+
+    // v11
+    m_vertices[22] = p3.x + w;
+    m_vertices[23] = p3.y + w;
+
+    // v12
+    m_vertices[24] = p3.x - w;
+    m_vertices[25] = p3.y - w;
+
+    // v13
+    m_vertices[26] = p3.x - w;
+    m_vertices[27] = p3.y + w;
+
+    // v14
+    m_vertices[28] = p3.x + w;
+    m_vertices[29] = p3.y + w;
+
+    // v15
+    m_vertices[30] = p0.x - w;
+    m_vertices[31] = p0.y - w;
+
+    // v16
+    m_vertices[32] = p0.x + w;
+    m_vertices[33] = p0.y - w;
 }
 
 void CurveRenderer::deleteVertices()
@@ -81,7 +167,8 @@ CurveRenderer::CurveRenderer()
         m_models[i] = glm::mat4(1.0f);
     }
 
-    createVertices();
+    // createBezierVertices();
+    createRectangleVertices();
 }
 
 CurveRenderer::~CurveRenderer()
@@ -267,9 +354,9 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
     for (int i = 0; i < m_graphics; i ++) {
         glm::mat4 model = m_models[i];
-        // model = glm::rotate(model, qDegreesToRadians(m_angle),
-        //                     glm::vec3(0.0f, 1.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(2.0, 2.0, 0.0));
+        model = glm::rotate(model, qDegreesToRadians(m_angle),
+                            glm::vec3(0.0f, 1.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(1.0, 1.0, 0.0));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
 
         batch->uploadStaticBuffer(m_modelBuffer.get(),
@@ -287,7 +374,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
         { m_modelBuffer.get(), 0 }
     };
     cb->setVertexInput(0, 2, inputBindings4);
-    cb->draw(m_segments*2, m_graphics);
+    cb->draw(m_verticesCount, m_graphics);
 
     cb->endPass();
 }

@@ -19,7 +19,8 @@ public:
 private:
     int createBuffer();
     int createPipline();
-    void createVertices();
+    void createBezierVertices(int segments = 100);
+    void createRectangleVertices(int segments = 100);
     void deleteVertices();
 
     glm::vec2 bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
@@ -36,9 +37,10 @@ private:
     std::unique_ptr<QRhiBuffer> m_modelBuffer;
     float* m_vertices;
     int m_segments = 100;
+    int m_verticesCount;
     int m_vertexAttributeStrip = 2; // X Y
     int m_graphics = 1;
-    float m_width = 4.0;
+    float m_width = 2.0;
     glm::mat4* m_models;
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
