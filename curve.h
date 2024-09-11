@@ -19,7 +19,11 @@ public:
 private:
     int createBuffer();
     int createPipline();
-    void crateTextureImage();
+    void createVertices();
+    void deleteVertices();
+
+    glm::vec2 bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
+                     const glm::vec2& p2, const glm::vec2& p3);
 
     QRhi *m_rhi = nullptr;
     int m_sampleCount = 4;
@@ -30,24 +34,23 @@ private:
     std::unique_ptr<QRhiBuffer> m_uniformBuffer;
     std::unique_ptr<QRhiBuffer> m_vectexBuffer;
     std::unique_ptr<QRhiBuffer> m_modelBuffer;
-    std::unique_ptr<QRhiSampler> m_sampler;
-    int m_Rects = 1;
+    float* m_vertices;
+    int m_segments = 100;
+    int m_vertexAttributeStrip = 2; // X Y
+    int m_graphics = 1;
+    float m_width = 4.0;
     glm::mat4* m_models;
-    QImage m_textureImage;
-    int m_pointCount = 4;
-    glm::vec2* m_points;
-
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
 
     int m_uniformBufferBlockCount = 1;
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
+        QRhiShaderResourceBinding::GeometryStage |
         QRhiShaderResourceBinding::FragmentStage |
         QRhiShaderResourceBinding::TessellationControlStage |
         QRhiShaderResourceBinding::TessellationEvaluationStage |
-        QRhiShaderResourceBinding::ComputeStage |
-        QRhiShaderResourceBinding::GeometryStage;
+        QRhiShaderResourceBinding::ComputeStage;
 
     float m_angle = 0.0f;
     float m_orthoX = 0.0f;
@@ -90,7 +93,7 @@ private:
     float m_angle = 0.0f;
     float m_orthoX = 0.0f;
     float m_orthoY = 0.0f;
-    float m_zoom = 1.0f;
+    float m_zoom = 500.0f;
     QPointF m_focus = {0.0f, 0.0f};
     bool m_spaceButtonDown = false;
     bool m_leftButtonDown = false;

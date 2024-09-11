@@ -13,8 +13,6 @@
 #define STD140_ALIGN_VEC4 16
 #define STD140_ALIGN_MAT4 64
 
-static const QSize TEXTURE_SIZE(512, 512);
-
 static QShader getShader(const QString &name)
 {
     QFile f(name);
@@ -26,35 +24,70 @@ static size_t align(size_t offset, size_t alignment) {
     return (offset + alignment - 1) & ~(alignment - 1);
 }
 
+void CurveRenderer::createVertices()
+{
+    m_vertices = new float[m_segments * m_vertexAttributeStrip * 2];
 
-static float vertices[] = {
-    //---- Position------  -----Color-----    ---UV----
-    // X     Y       Z     R     G     B       U    V
-   -0.5f,  -0.5f,  0.0f,   1.0f, 0.0f, 0.0f,   0.0, 0.0,
-    0.5f,  -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0, 0.0,
-   -0.5f,   0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0, 1.0,
-   -0.5f,   0.5f,  0.0f,   0.0f, 0.0f, 1.0f,   0.0, 1.0,
-    0.5f,  -0.5f,  0.0f,   0.0f, 1.0f, 0.0f,   1.0, 0.0,
-    0.5f,   0.5f,  0.0f,   1.0f, 0.0f, 1.0f,   1.0, 1.0,
-};
+    glm::vec2 p0(-100.0,  -100.0);
+    glm::vec2 p1(  0.0,  -100.0);
+    glm::vec2 p2(  0.0,  100.0);
+    glm::vec2 p3( 100.0,  100.0);
 
+    for (int i = 0; i < m_segments; i ++) {
+
+        float t = i / (float)m_segments;
+        float delta = 1.0f / m_segments;
+
+        glm::vec2 currentPoint = bezier(t, p0, p1, p2, p3);
+        glm::vec2 nextPoint = bezier(std::min(t + delta, 1.0f), p0, p1, p2, p3);
+
+        // 计算切线
+        glm::vec2 tangent = glm::normalize((nextPoint - currentPoint));
+        // 计算法线
+        glm::vec2 normal = glm::vec2(-tangent.y, tangent.x);
+
+        // 计算左右两边的点
+        glm::vec2 left = currentPoint + (normal * (float)(m_width / 2.0));
+        glm::vec2 right = currentPoint - (normal * (float)(m_width / 2.0));
+
+        m_vertices[i * m_vertexAttributeStrip * 2 + 0] = left.x;
+        m_vertices[i * m_vertexAttributeStrip * 2 + 1] = left.y;
+        m_vertices[i * m_vertexAttributeStrip * 2 + 2] = right.x;
+        m_vertices[i * m_vertexAttributeStrip * 2 + 3] = right.y;
+    }
+}
+
+void CurveRenderer::deleteVertices()
+{
+    if (m_vertices) {
+        delete [] m_vertices;
+    }
+}
+
+glm::vec2 CurveRenderer::bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
+                                const glm::vec2& p2, const glm::vec2& p3)
+{
+    float u = 1.0 - t;
+    return (float)(u * u * u) * p0 +
+           (float)(3.0 * u * u * t) * p1 +
+           (float)(3.0 * u * t * t) * p2 +
+           (float)(t * t * t) * p3;
+}
 
 CurveRenderer::CurveRenderer()
 {
-    m_models = new glm::mat4[m_Rects];
-    for (int i = 0; i < m_Rects; i ++) {
+    m_models = new glm::mat4[m_graphics];
+    for (int i = 0; i < m_graphics; i ++) {
         m_models[i] = glm::mat4(1.0f);
     }
 
-    m_points = new glm::vec2[m_pointCount*2];
-    crateTextureImage();
+    createVertices();
 }
 
 CurveRenderer::~CurveRenderer()
 {
-    if (m_points) {
-        delete [] m_points;
-    }
+    deleteVertices();
+
     if (m_models) {
         delete [] m_models;
     }
@@ -65,14 +98,16 @@ int CurveRenderer::createBuffer()
     if (!m_rhi)
         return -1;
 
+    size_t verticesSize = sizeof(float) *
+                          m_vertexAttributeStrip * m_segments * 2;
     m_vectexBuffer.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
                                           QRhiBuffer::VertexBuffer,
-                                          sizeof(vertices)));
+                                          verticesSize));
     m_vectexBuffer->create();
 
     m_modelBuffer.reset(m_rhi->newBuffer(QRhiBuffer::Immutable,
                                          QRhiBuffer::VertexBuffer,
-                                         m_Rects*sizeof(glm::mat4)));
+                                         m_graphics * sizeof(glm::mat4)));
     m_modelBuffer->create();
 
     return 0;
@@ -100,41 +135,29 @@ int CurveRenderer::createPipline()
     QRhiVertexInputLayout inputLayout;
     inputLayout.setBindings(
         {
-         { 8 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+         { 2 * sizeof(float), QRhiVertexInputBinding::PerVertex },
          { 64, QRhiVertexInputBinding::PerInstance },
          });
 
     inputLayout.setAttributes(
         {
-         // binding0
-         { 0, 0, QRhiVertexInputAttribute::Float3, 0                 },
-         { 0, 1, QRhiVertexInputAttribute::Float3, 3 * sizeof(float) },
-         { 0, 2, QRhiVertexInputAttribute::Float2, 6 * sizeof(float) },
-         // binding1
-         { 1, 3, QRhiVertexInputAttribute::Float4, 0 },
-         { 1, 4, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
-         { 1, 5, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
-         { 1, 6, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+            // binding0
+            { 0, 0, QRhiVertexInputAttribute::Float2, 0                 },
+            // binding1
+            { 1, 3, QRhiVertexInputAttribute::Float4, 0 },
+            { 1, 4, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+            { 1, 5, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+            { 1, 6, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
          });
 
     int blockSize = sizeof(glm::mat4) +
-                    sizeof(glm::mat4) +
-                    sizeof(int) +
-                    (sizeof(glm::vec2) * m_pointCount * 2)
+                    sizeof(glm::mat4)
         ;
     int bufferSize = m_rhi->ubufAligned(blockSize) * m_uniformBufferBlockCount;
     m_uniformBuffer.reset(m_rhi->newBuffer(QRhiBuffer::Dynamic,
                                            QRhiBuffer::UniformBuffer,
                                            bufferSize));
     m_uniformBuffer->create();
-
-    // sampler
-    m_sampler.reset(m_rhi->newSampler(QRhiSampler::Linear,
-                                      QRhiSampler::Linear,
-                                      QRhiSampler::None,
-                                      QRhiSampler::ClampToEdge,
-                                      QRhiSampler::ClampToEdge));
-    m_sampler->create();
 
     m_srb.reset(m_rhi->newShaderResourceBindings());
     m_srb->setBindings({
@@ -152,6 +175,8 @@ int CurveRenderer::createPipline()
     m_pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
     m_pipeline->setDepthTest(true);
     m_pipeline->setDepthWrite(true);
+    m_pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+    // m_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
 
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
@@ -167,28 +192,12 @@ int CurveRenderer::createPipline()
     return 1;
 }
 
-void CurveRenderer::crateTextureImage()
-{
-    // m_textureImage = QImage(TEXTURE_SIZE, QImage::Format_RGBA8888);
-    // const QRect r(QPoint(0, 0), TEXTURE_SIZE);
-    // QPainter p(&m_textureImage);
-    // p.fillRect(r, QGradient::AmourAmour);
-    // QFont font;
-    // font.setPointSize(24);
-    // p.setFont(font);
-    // p.drawText(r, QString("Hello World"));
-    // p.end();
-    // m_textureImage = m_textureImage.mirrored(false, true);
-    // m_textureImage = QImage(":/resources/texture1.png").mirrored(false, true);
-    // m_textureImage = QImage(":/resources/texture2.png").mirrored(false, true);
-    m_textureImage = QImage(":/resources/texture3.png").mirrored(false, true);
-}
 
 void CurveRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (m_rhi != rhi()) {
         m_rhi = rhi();
-        ShowFreatures(m_rhi);
+        // ShowFreatures(m_rhi);
         createBuffer();
         m_pipeline.reset();
     }
@@ -211,7 +220,7 @@ void CurveRenderer::initialize(QRhiCommandBuffer *cb)
 
     QRhiResourceUpdateBatch *batch = m_rhi->nextResourceUpdateBatch();
 
-    batch->uploadStaticBuffer(m_vectexBuffer.get(), vertices);
+    batch->uploadStaticBuffer(m_vectexBuffer.get(), m_vertices);
     batch->uploadStaticBuffer(m_modelBuffer.get(), m_models);
 
     cb->resourceUpdate(batch);
@@ -228,7 +237,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
                              10.0f,
                              1000000.0f);
 
-    QVector3D cameraPos(m_focus.rx(), m_focus.ry(), 800.0f + m_zoom);
+    QVector3D cameraPos(m_focus.rx(), m_focus.ry(), m_zoom);
     QVector3D cameraTarget(m_focus.rx(), m_focus.ry(), 0.0f);
     QVector3D cameraUp(0.0f, 1.0f, 0.0f);
     m_view.setToIdentity();
@@ -256,40 +265,17 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
                                m_projection.constData());
 
 
-    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4), STD140_ALIGN_INT);
-    batch->updateDynamicBuffer(m_uniformBuffer.get(),
-                               offset,
-                               sizeof(int),
-                               &m_pointCount);
-
-    // 因为 shader 使用了 std140 布局，vec2数组每个元素必须按16个字节进行对齐，
-    // 所以四个 vec2 元素实际上必须占用8个 vec2 的缓冲区
-    m_points[0] = glm::vec2(-0.3, -0.3);
-    m_points[1] = glm::vec2( 0.0,  0.0);
-    m_points[2] = glm::vec2( 0.0, -0.3);
-    m_points[3] = glm::vec2( 0.0,  0.0);
-    m_points[4] = glm::vec2( 0.0,  0.3);
-    m_points[5] = glm::vec2( 0.0,  0.0);
-    m_points[6] = glm::vec2( 0.3,  0.3);
-    m_points[7] = glm::vec2( 0.0,  0.0);
-    offset = align(sizeof(glm::mat4) +
-                       sizeof(glm::mat4) +
-                       sizeof(int),
-                   STD140_ALIGN_VEC4);
-    batch->updateDynamicBuffer(m_uniformBuffer.get(),
-                               offset,
-                               sizeof(glm::vec2)*m_pointCount*2,
-                               m_points);
-
-    for (int i = 0; i < m_Rects; i ++) {
+    for (int i = 0; i < m_graphics; i ++) {
         glm::mat4 model = m_models[i];
-        model = glm::rotate(model, qDegreesToRadians(m_angle),
-                            glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(400.0, 400.0, 0.0));
+        // model = glm::rotate(model, qDegreesToRadians(m_angle),
+        //                     glm::vec3(0.0f, 1.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(2.0, 2.0, 0.0));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
 
-        batch->uploadStaticBuffer(m_modelBuffer.get(),i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4), &model);
+        batch->uploadStaticBuffer(m_modelBuffer.get(),
+                                  i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4),
+                                  &model);
     }
 
     cb->resourceUpdate(batch);
@@ -301,7 +287,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
         { m_modelBuffer.get(), 0 }
     };
     cb->setVertexInput(0, 2, inputBindings4);
-    cb->draw(6, m_Rects);
+    cb->draw(m_segments*2, m_graphics);
 
     cb->endPass();
 }
@@ -370,10 +356,11 @@ void Curve::wheelEvent(QWheelEvent *event)
 {
     // qDebug() << "Mouse wheel delta: " << event->angleDelta();
     if (event->angleDelta().y() > 0) {
-        m_zoom += 20.0;
+        m_zoom += 10.0;
     }
     else if (event->angleDelta().y() < 0) {
-        m_zoom -= 20.0;
+        if (m_zoom - 10.0 >= 10.0)
+            m_zoom -= 10.0;
     }
     return QQuickRhiItem::wheelEvent(event);
 }

@@ -11,8 +11,6 @@ layout(location = 6) in vec4 modelColumn3;
 layout(std140, binding = 0) uniform uniformBlock {
     mat4 view;
     mat4 projection;
-    int count;
-    vec2 p[];
 };
 
 layout(location = 0) out vec4 localCoord;
