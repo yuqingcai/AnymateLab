@@ -60,17 +60,17 @@ void CurveRenderer::createBezierVertices(int segments)
     }
 }
 
-void CurveRenderer::createRectangleVertices(int segments)
+void CurveRenderer::createRectVertices(int segments)
 {
     m_segments = segments;
     m_verticesCount = 17;
 
     m_vertices = new float[m_segments * m_vertexAttributeStrip * 2];
 
-    glm::vec2 p0(-50.0,  50.0);
-    glm::vec2 p1( 50.0,  50.0);
-    glm::vec2 p2( 50.0, -50.0);
-    glm::vec2 p3(-50.0, -50.0);
+    glm::vec2 p0(-400.0,  300.0);
+    glm::vec2 p1( 400.0,  300.0);
+    glm::vec2 p2( 400.0, -300.0);
+    glm::vec2 p3(-400.0, -300.0);
 
     float w = m_width / 2.0;
 
@@ -167,8 +167,8 @@ CurveRenderer::CurveRenderer()
         m_models[i] = glm::mat4(1.0f);
     }
 
-    // createBezierVertices();
-    createRectangleVertices();
+    createBezierVertices();
+    createRectVertices();
 }
 
 CurveRenderer::~CurveRenderer()
@@ -263,7 +263,6 @@ int CurveRenderer::createPipline()
     m_pipeline->setDepthTest(true);
     m_pipeline->setDepthWrite(true);
     m_pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
-    // m_pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
 
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
@@ -304,14 +303,12 @@ void CurveRenderer::initialize(QRhiCommandBuffer *cb)
         createPipline();
     }
 
-
     QRhiResourceUpdateBatch *batch = m_rhi->nextResourceUpdateBatch();
 
     batch->uploadStaticBuffer(m_vectexBuffer.get(), m_vertices);
     batch->uploadStaticBuffer(m_modelBuffer.get(), m_models);
 
     cb->resourceUpdate(batch);
-
 }
 
 void CurveRenderer::render(QRhiCommandBuffer *cb)
@@ -354,15 +351,14 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
     for (int i = 0; i < m_graphics; i ++) {
         glm::mat4 model = m_models[i];
-        model = glm::rotate(model, qDegreesToRadians(m_angle),
-                            glm::vec3(0.0f, 1.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0, 1.0, 0.0));
-        model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
-
-        batch->uploadStaticBuffer(m_modelBuffer.get(),
-                                  i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4),
-                                  &model);
+        // model = glm::rotate(model, qDegreesToRadians(m_angle),
+        //                     glm::vec3(0.0f, 1.0f, 1.0f));
+        // model = glm::scale(model, glm::vec3(1.0, 1.0, 0.0));
+        // model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
+        // batch->uploadStaticBuffer(m_modelBuffer.get(),
+        //                           i * sizeof(glm::mat4),
+        //                           sizeof(glm::mat4),
+        //                           &model);
     }
 
     cb->resourceUpdate(batch);
@@ -473,6 +469,9 @@ void Curve::keyPressEvent(QKeyEvent *event)
             qDebug("m_spaceButtonDown true");
         }
     }
+    else if (event->key() == Qt::Key_R) {
+        renderToTexture();
+    }
 
     return QQuickRhiItem::keyPressEvent(event);
 }
@@ -528,4 +527,147 @@ float Curve::getZoom()
 QPointF& Curve::getFocus()
 {
     return m_focus;
+}
+
+void Curve::renderToTexture()
+{
+    qDebug("render!");
+
+    std::unique_ptr<QRhi> rhi;
+
+#if defined(Q_OS_WIN)
+    QRhiD3D11InitParams params;
+    params.enableDebugLayer = true;
+    rhi.reset(QRhi::create(QRhi::D3D11, &params));
+#elif defined(Q_OS_MACOS)
+    QRhiMetalInitParams params;
+    rhi.reset(QRhi::create(QRhi::Metal, &params));
+#else
+    QRhiVulkanInitParams params;
+    params.inst = vulkanInstance();
+    params.window = this;
+    rhi.reset(QRhi::create(QRhi::Vulkan, &params));
+#endif
+    if (rhi)
+        qDebug() << rhi->backendName() << rhi->driverInfo();
+    else
+        qFatal("Failed to initialize RHI");
+
+    float rotation = 0.0f;
+    float opacity = 1.0f;
+    int opacityDir = 1;
+
+    std::unique_ptr<QRhiTexture> tex(rhi->newTexture(QRhiTexture::RGBA8,
+                                                     QSize(800, 600),
+                                                     1,
+                                                     QRhiTexture::RenderTarget | QRhiTexture::UsedAsTransferSource));
+    tex->create();
+
+    std::unique_ptr<QRhiTextureRenderTarget> rt(
+        rhi->newTextureRenderTarget({ tex.get() }));
+    std::unique_ptr<QRhiRenderPassDescriptor> rp(rt->newCompatibleRenderPassDescriptor());
+
+    rt->setRenderPassDescriptor(rp.get());
+    rt->create();
+
+    QMatrix4x4 viewProjection = rhi->clipSpaceCorrMatrix();
+    viewProjection.perspective(45.0f, 1280 / 720.f, 0.01f, 1000.0f);
+    viewProjection.translate(0, 0, -4);
+
+    static float vertexData[] = {
+        // Y up, CCW
+        0.0f,   0.5f,     1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f,     0.0f, 1.0f, 0.0f,
+        0.5f,  -0.5f,     0.0f, 0.0f, 1.0f,
+    };
+
+    std::unique_ptr<QRhiBuffer> vbuf(rhi->newBuffer(QRhiBuffer::Immutable,
+                                                    QRhiBuffer::VertexBuffer,
+                                                    sizeof(vertexData)));
+    vbuf->create();
+
+    std::unique_ptr<QRhiBuffer> ubuf(rhi->newBuffer(QRhiBuffer::Dynamic,
+                                                    QRhiBuffer::UniformBuffer,
+                                                    64 + 4));
+    ubuf->create();
+
+    std::unique_ptr<QRhiShaderResourceBindings> srb(rhi->newShaderResourceBindings());
+    srb->setBindings({
+        QRhiShaderResourceBinding::uniformBuffer(0,
+                                                 QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
+                                                 ubuf.get())
+    });
+    srb->create();
+
+    std::unique_ptr<QRhiGraphicsPipeline> ps(rhi->newGraphicsPipeline());
+    QRhiGraphicsPipeline::TargetBlend premulAlphaBlend;
+    premulAlphaBlend.enable = true;
+    ps->setTargetBlends({ premulAlphaBlend });
+    static auto getShader = [](const QString &name) {
+        QFile f(name);
+        return f.open(QIODevice::ReadOnly) ? QShader::fromSerialized(f.readAll()) : QShader();
+    };
+    ps->setShaderStages({
+        { QRhiShaderStage::Vertex, getShader(QLatin1String(":/AnymateLab/shaders/color.vert.qsb")) },
+        { QRhiShaderStage::Fragment, getShader(QLatin1String(":/AnymateLab/shaders/color.frag.qsb")) }
+    });
+
+
+    QRhiVertexInputLayout inputLayout;
+    inputLayout.setBindings({
+        { 5 * sizeof(float) }
+    });
+    inputLayout.setAttributes({
+        { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+        { 0, 1, QRhiVertexInputAttribute::Float3, 2 * sizeof(float) }
+    });
+    ps->setVertexInputLayout(inputLayout);
+    ps->setShaderResourceBindings(srb.get());
+    ps->setRenderPassDescriptor(rp.get());
+    ps->create();
+
+    QRhiCommandBuffer *cb;
+    for (int frame = 0; frame < 20; ++frame) {
+        rhi->beginOffscreenFrame(&cb);
+
+        QRhiResourceUpdateBatch *u = rhi->nextResourceUpdateBatch();
+        if (frame == 0)
+            u->uploadStaticBuffer(vbuf.get(), vertexData);
+
+        QMatrix4x4 mvp = viewProjection;
+        mvp.rotate(rotation, 0, 1, 0);
+        u->updateDynamicBuffer(ubuf.get(), 0, 64, mvp.constData());
+        rotation += 5.0f;
+
+        u->updateDynamicBuffer(ubuf.get(), 64, 4, &opacity);
+        opacity += opacityDir * 0.2f;
+        if (opacity < 0.0f || opacity > 1.0f) {
+            opacityDir *= -1;
+            opacity = qBound(0.0f, opacity, 1.0f);
+        }
+
+        const QColor clearColor = QColor::fromRgbF(0.0f, 0.0f, 0.0f, 1.0f);
+        cb->beginPass(rt.get(), clearColor, { 1.0f, 0 }, u);
+        cb->setGraphicsPipeline(ps.get());
+        cb->setViewport({ 0, 0, 1280, 720 });
+        cb->setShaderResources();
+        const QRhiCommandBuffer::VertexInput vbufBinding(vbuf.get(), 0);
+        cb->setVertexInput(0, 1, &vbufBinding);
+        cb->draw(3);
+        QRhiReadbackResult readbackResult;
+        u = rhi->nextResourceUpdateBatch();
+        u->readBackTexture({ tex.get() }, &readbackResult);
+        cb->endPass(u);
+
+        rhi->endOffscreenFrame();
+
+        QImage image(reinterpret_cast<const uchar *>(readbackResult.data.constData()),
+                     readbackResult.pixelSize.width(),
+                     readbackResult.pixelSize.height(),
+                     QImage::Format_RGBA8888_Premultiplied);
+        if (rhi->isYUpInFramebuffer())
+            image = image.mirrored();
+        image.save(QString::asprintf("frame%d.png", frame));
+    }
+
 }

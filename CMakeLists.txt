@@ -22,6 +22,8 @@ qt_add_executable(appAnymateLab
     cubes.h
     curve.cpp
     curve.h
+    texturerenderer.h
+    texturerenderer.cpp
     ${RESOURCES}
 )
 
@@ -101,4 +103,11 @@ qt_add_shaders(appAnymateLab "appAnymateLab_curve_shaders"
         shaders/curve.frag
 )
 
+qt_add_shaders(appAnymateLab "appAnymateLab_color_shaders"
+    PREFIX
+        /AnymateLab
+    FILES
+        shaders/color.vert
+        shaders/color.frag
+)
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)

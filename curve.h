@@ -20,7 +20,7 @@ private:
     int createBuffer();
     int createPipline();
     void createBezierVertices(int segments = 100);
-    void createRectangleVertices(int segments = 100);
+    void createRectVertices(int segments = 100);
     void deleteVertices();
 
     glm::vec2 bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
@@ -40,7 +40,7 @@ private:
     int m_verticesCount;
     int m_vertexAttributeStrip = 2; // X Y
     int m_graphics = 1;
-    float m_width = 2.0;
+    float m_width = 1.0;
     glm::mat4* m_models;
     QMatrix4x4 m_view;
     QMatrix4x4 m_projection;
@@ -80,6 +80,9 @@ public:
     QPointF& getFocus();
 
 protected:
+    void renderToTexture();
+
+
     void hoverMoveEvent(QHoverEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;

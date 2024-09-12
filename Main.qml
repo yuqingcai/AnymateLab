@@ -30,6 +30,12 @@ ApplicationWindow {
             height:1
             color: "lightgray"
         }
+
+        Button {
+            id: renderButton
+            text: "Render to Texture"
+            anchors.centerIn: parent
+        }
     }
 
 
@@ -165,6 +171,7 @@ ApplicationWindow {
                     loops: Animation.Infinite
                     running:true
                 }
+
             }
 
 
