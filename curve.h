@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "graphic.h"
 
 class CurveRenderer : public QQuickRhiItemRenderer
 {
@@ -19,33 +20,22 @@ public:
 private:
     int createBuffer();
     int createPipline();
-    void createBezierVertices(int segments = 100);
-    void createRectVertices(int segments = 100);
-    void deleteVertices();
 
-    glm::vec2 bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
-                     const glm::vec2& p2, const glm::vec2& p3);
+    QRhi *_rhi = nullptr;
+    int _sampleCount = 4;
+    QRhiTexture::Format _textureFormat = QRhiTexture::RGBA8;
 
-    QRhi *m_rhi = nullptr;
-    int m_sampleCount = 4;
-    QRhiTexture::Format m_textureFormat = QRhiTexture::RGBA8;
+    std::unique_ptr<QRhiGraphicsPipeline> _pipeline;
+    std::unique_ptr<QRhiShaderResourceBindings> _srb;
 
-    std::unique_ptr<QRhiGraphicsPipeline> m_pipeline;
-    std::unique_ptr<QRhiShaderResourceBindings> m_srb;
-    std::unique_ptr<QRhiBuffer> m_uniformBuffer;
-    std::unique_ptr<QRhiBuffer> m_vectexBuffer;
-    std::unique_ptr<QRhiBuffer> m_modelBuffer;
-    float* m_vertices;
-    int m_segments = 100;
-    int m_verticesCount;
-    int m_vertexAttributeStrip = 2; // X Y
-    int m_graphics = 1;
-    float m_width = 1.0;
-    glm::mat4* m_models;
-    QMatrix4x4 m_view;
-    QMatrix4x4 m_projection;
+    std::unique_ptr<QRhiBuffer> _uniformBuffer;
+    std::unique_ptr<QRhiBuffer> _vectexBuffer;
+    std::unique_ptr<QRhiBuffer> _modelBuffer;
 
-    int m_uniformBufferBlockCount = 1;
+    QMatrix4x4 _view;
+    QMatrix4x4 _projection;
+    glm::mat4* _model;
+
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
         QRhiShaderResourceBinding::GeometryStage |
@@ -54,11 +44,14 @@ private:
         QRhiShaderResourceBinding::TessellationEvaluationStage |
         QRhiShaderResourceBinding::ComputeStage;
 
-    float m_angle = 0.0f;
-    float m_orthoX = 0.0f;
-    float m_orthoY = 0.0f;
-    float m_zoom = 1.0f;
-    QPointF m_focus = {0.0f, 0.0f};
+    float _angle = 0.0f;
+    float _orthoX = 0.0f;
+    float _orthoY = 0.0f;
+    float _zoom = 1.0f;
+    QPointF _focus = {0.0f, 0.0f};
+
+
+    std::vector<Anymate::GeometryShape*> _shapes;
 
 };
 
@@ -70,6 +63,7 @@ class Curve: public QQuickRhiItem
 
 public:
     Curve();
+    virtual ~ Curve();
     QQuickRhiItemRenderer *createRenderer() override;
 
     float angle() const;
@@ -79,9 +73,11 @@ public:
     float getZoom();
     QPointF& getFocus();
 
+    std::vector<Anymate::GeometryShape*>& getShapes();
+
+
 protected:
     void renderToTexture();
-
 
     void hoverMoveEvent(QHoverEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
@@ -95,16 +91,19 @@ signals:
     void angleChanged();
 
 private:
-    float m_angle = 0.0f;
-    float m_orthoX = 0.0f;
-    float m_orthoY = 0.0f;
-    float m_zoom = 500.0f;
-    QPointF m_focus = {0.0f, 0.0f};
-    bool m_spaceButtonDown = false;
-    bool m_leftButtonDown = false;
 
-    QPoint m_mosePosition0 = {0, 0};
-    QPoint m_mosePosition1 = {0, 0};
+    std::vector<Anymate::GeometryShape*> _shapes;
+
+    float _angle = 0.0f;
+    float _orthoX = 0.0f;
+    float _orthoY = 0.0f;
+    float _zoom = 500.0f;
+    QPointF _focus = {0.0f, 0.0f};
+    bool _spaceButtonDown = false;
+    bool _leftButtonDown = false;
+
+    QPoint _mosePosition0 = {0, 0};
+    QPoint _mosePosition1 = {0, 0};
 };
 
 #endif // CURVE_H

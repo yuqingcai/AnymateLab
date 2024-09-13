@@ -24,6 +24,8 @@ qt_add_executable(appAnymateLab
     curve.h
     texturerenderer.h
     texturerenderer.cpp
+    graphic.h
+    graphic.cpp
     ${RESOURCES}
 )
 
