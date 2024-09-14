@@ -1,5 +1,6 @@
 #include "graphic.h"
 #include <cmath>
+#include <cstring>
 
 namespace Anymate {
 Graphic::Graphic():
