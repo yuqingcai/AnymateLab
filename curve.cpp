@@ -14,6 +14,8 @@
 #define STD140_ALIGN_VEC4 16
 #define STD140_ALIGN_MAT4 64
 
+using namespace Anymate;
+
 static QShader getShader(const QString &name)
 {
     QFile f(name);
@@ -79,14 +81,14 @@ int CurveRenderer::createPipline()
     QRhiVertexInputLayout inputLayout;
     inputLayout.setBindings(
         {
-            { 2 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+            { 3 * sizeof(float), QRhiVertexInputBinding::PerVertex },
             { 64, QRhiVertexInputBinding::PerInstance },
     });
 
     inputLayout.setAttributes(
         {
             // binding0
-            { 0, 0, QRhiVertexInputAttribute::Float2, 0                 },
+            { 0, 0, QRhiVertexInputAttribute::Float3, 0                 },
             // binding1
             { 1, 3, QRhiVertexInputAttribute::Float4, 0 },
             { 1, 4, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
@@ -120,7 +122,8 @@ int CurveRenderer::createPipline()
     _pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
     _pipeline->setDepthTest(true);
     _pipeline->setDepthWrite(true);
-    _pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+    // _pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
+    _pipeline->setTopology(QRhiGraphicsPipeline::Triangles);
 
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
@@ -203,11 +206,10 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     // update VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        batch->uploadStaticBuffer(_vectexBuffer.get(),
-                                  offset,
-                                  _shapes[i]->getVertexBufferSize(),
-                                  _shapes[i]->getVertexBuffer());
-        offset += _shapes[i]->getVertexBufferSize();
+        glm::vec3* vertices = _shapes[i]->getVertices(GeometryShape::BorderVertex);
+        uint32_t bufferSize = _shapes[i]->getVertexBufferSize(GeometryShape::BorderVertex);
+        batch->uploadStaticBuffer(_vectexBuffer.get(), offset, bufferSize, vertices);
+        offset += bufferSize;
 
         glm::mat4 model = glm::mat4(1.0f);
         // model = glm::rotate(model, qDegreesToRadians(_angle),
@@ -225,18 +227,19 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     cb->setGraphicsPipeline(_pipeline.get());
     cb->setShaderResources(_srb.get());
 
-
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
+        uint32_t vertexCount = _shapes[i]->getVertexCount(GeometryShape::BorderVertex);
+        uint32_t bufferSize = _shapes[i]->getVertexBufferSize(GeometryShape::BorderVertex);
 
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer.get(), offset },
             { _modelBuffer.get(), i * sizeof(glm::mat4) }
         };
         cb->setVertexInput(0, 2, inputBindings);
-        cb->draw(_shapes[i]->getVertexCount());
+        cb->draw(vertexCount);
 
-        offset += _shapes[i]->getVertexBufferSize();
+        offset += bufferSize;
     }
 
 
@@ -264,37 +267,39 @@ Curve::Curve()
     setAcceptedMouseButtons(Qt::LeftButton);
     setFlag(ItemAcceptsInputMethod, true);
 
-    Anymate::Rectangle* rect0 = new Anymate::Rectangle();
-    rect0->setX(0.0);
-    rect0->setY(0.0);
-    rect0->setWidth(100.0);
-    rect0->setHeight(100.0);
-    rect0->generateCurve();
+    Anymate::RoundedRect* rect0 = new Anymate::RoundedRect(0.0, 0.0,
+                                                           100.0, 100.0,
+                                                           5.0,
+                                                           30.0,
+                                                           2.0,
+                                                           50.0);
+    rect0->setBorderWidth(1.0);
+    rect0->createVertices();
 
 
-    Anymate::Rectangle* rect1 = new Anymate::Rectangle();
-    rect1->setX(100.0);
-    rect1->setY(100.0);
-    rect1->setWidth(50.0);
-    rect1->setHeight(100.0);
-    rect1->generateCurve();
+    // Anymate::Rectangle* rect1 = new Anymate::Rectangle();
+    // rect1->setX(100.0);
+    // rect1->setY(100.0);
+    // rect1->setWidth(50.0);
+    // rect1->setHeight(100.0);
+    // rect1->generateVertices();
 
-    Anymate::Bezier* curve = new Anymate::Bezier({
-        glm::vec2( -100.0, -100.0),
-        glm::vec2(   0.0, -100.0),
-        glm::vec2(   0.0,  100.0),
-        glm::vec2( 100.0, 100.0)
-    });
-    curve->generateCurve();
+    // Anymate::Bezier* curve = new Anymate::Bezier({
+    //     glm::vec2( -100.0, -100.0),
+    //     glm::vec2(   0.0, -100.0),
+    //     glm::vec2(   0.0,  100.0),
+    //     glm::vec2( 100.0, 100.0)
+    // });
+    // curve->generateVertices();
 
-
-    Anymate::Circle* circle = new Anymate::Circle(80.0);
-    circle->generateCurve();
+    // Anymate::Oval* oval = new Anymate::Oval(0.0, 0.0, 80.0, 60.0);
+    // oval->generateVertices();
 
     _shapes.push_back(rect0);
-    _shapes.push_back(rect1);
-    _shapes.push_back(curve);
-    _shapes.push_back(circle);
+    // _shapes.push_back(rect1);
+    // _shapes.push_back(curve);
+    // _shapes.push_back(oval);
+
 
 }
 
