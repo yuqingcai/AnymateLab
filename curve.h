@@ -18,19 +18,29 @@ public:
     void render(QRhiCommandBuffer *cb) override;
 
 private:
-    int createBuffer();
-    int createPipline();
+    int createBuffer0();
+    int createShaderResourceBinding0();
+    int createBuffer1();
+    int createShaderResourceBinding1();
+    int createPipline0();
+    int createPipline1();
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;
     QRhiTexture::Format _textureFormat = QRhiTexture::RGBA8;
 
-    std::unique_ptr<QRhiGraphicsPipeline> _pipeline;
-    std::unique_ptr<QRhiShaderResourceBindings> _srb;
 
-    std::unique_ptr<QRhiBuffer> _uniformBuffer;
-    std::unique_ptr<QRhiBuffer> _vectexBuffer;
-    std::unique_ptr<QRhiBuffer> _modelBuffer;
+    std::unique_ptr<QRhiGraphicsPipeline> _pipeline0;
+    std::unique_ptr<QRhiShaderResourceBindings> _srb0;
+    std::unique_ptr<QRhiBuffer> _uniformBuffer0;
+    std::unique_ptr<QRhiBuffer> _vectexBuffer0;
+    std::unique_ptr<QRhiBuffer> _modelBuffer0;
+
+    std::unique_ptr<QRhiGraphicsPipeline> _pipeline1;
+    std::unique_ptr<QRhiShaderResourceBindings> _srb1;
+    std::unique_ptr<QRhiBuffer> _uniformBuffer1;
+    std::unique_ptr<QRhiBuffer> _vectexBuffer1;
+    std::unique_ptr<QRhiBuffer> _modelBuffer1;
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
@@ -45,6 +55,7 @@ private:
         QRhiShaderResourceBinding::ComputeStage;
 
     float _angle = 0.0f;
+    float _scale = 1.0f;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
@@ -60,6 +71,7 @@ class Curve: public QQuickRhiItem
     Q_OBJECT
     QML_NAMED_ELEMENT(Curve)
     Q_PROPERTY(float angle READ angle WRITE setAngle NOTIFY angleChanged)
+    Q_PROPERTY(float scale READ scale WRITE setScale NOTIFY scaleChanged)
 
 public:
     Curve();
@@ -68,6 +80,8 @@ public:
 
     float angle() const;
     void setAngle(float a);
+    float scale() const;
+    void setScale(float s);
     float getOrthoX();
     float getOrthoY();
     float getZoom();
@@ -95,6 +109,7 @@ private:
     std::vector<Anymate::GeometryShape*> _shapes;
 
     float _angle = 0.0f;
+    float _scale = 1.0f;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 500.0f;

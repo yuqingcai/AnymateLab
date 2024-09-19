@@ -40,34 +40,111 @@ CurveRenderer::~CurveRenderer()
     }
 }
 
-int CurveRenderer::createBuffer()
+int CurveRenderer::createBuffer0()
 {
     if (!_rhi)
         return -1;
 
-    size_t verticesSize = sizeof(float) * 1024 * 1024;
-    _vectexBuffer.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
+    size_t verticesSize = sizeof(float) * 1024 * 1024 * 4;
+
+    _vectexBuffer0.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
                                         QRhiBuffer::VertexBuffer,
                                         verticesSize));
-    _vectexBuffer->create();
+    _vectexBuffer0->create();
 
-    _modelBuffer.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
+    _modelBuffer0.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
                                        QRhiBuffer::VertexBuffer,
                                        sizeof(glm::mat4) * 1024));
-    _modelBuffer->create();
+    _modelBuffer0->create();
+
+    return 0;
+}
+
+int CurveRenderer::createBuffer1()
+{
+    if (!_rhi)
+        return -1;
+
+    size_t verticesSize = sizeof(float) * 1024 * 1024 * 4;
+
+    _vectexBuffer1.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
+                                         QRhiBuffer::VertexBuffer,
+                                         verticesSize));
+    _vectexBuffer1->create();
+
+    _modelBuffer1.reset(_rhi->newBuffer(QRhiBuffer::Immutable,
+                                        QRhiBuffer::VertexBuffer,
+                                        sizeof(glm::mat4) * 1024));
+    _modelBuffer1->create();
 
     return 0;
 }
 
 
-int CurveRenderer::createPipline()
+int CurveRenderer::createShaderResourceBinding0()
 {
     if (!_rhi)
         return -1;
 
-    _pipeline.reset(_rhi->newGraphicsPipeline());
+    // view and projection uniform
+    int blockSize = sizeof(glm::mat4) +
+                    sizeof(glm::mat4) +
+                    sizeof(glm::vec4)
+        ;
+    int bufferSize = _rhi->ubufAligned(blockSize);
+    _uniformBuffer0.reset(_rhi->newBuffer(QRhiBuffer::Dynamic,
+                                          QRhiBuffer::UniformBuffer,
+                                          bufferSize));
+    _uniformBuffer0->create();
 
-    _pipeline->setShaderStages({
+    _srb0.reset(_rhi->newShaderResourceBindings());
+    _srb0->setBindings({
+        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0,
+            m_shaderResourceStages,
+            _uniformBuffer0.get(),
+            bufferSize),
+    });
+    _srb0->create();
+    return 1;
+}
+
+int CurveRenderer::createShaderResourceBinding1()
+{
+    if (!_rhi)
+        return -1;
+
+    // view and projection uniform
+    int blockSize = sizeof(glm::mat4) +
+                    sizeof(glm::mat4) +
+                    sizeof(glm::vec4)
+        ;
+    int bufferSize = _rhi->ubufAligned(blockSize);
+    _uniformBuffer1.reset(_rhi->newBuffer(QRhiBuffer::Dynamic,
+                                          QRhiBuffer::UniformBuffer,
+                                          bufferSize));
+    _uniformBuffer1->create();
+
+    _srb1.reset(_rhi->newShaderResourceBindings());
+    _srb1->setBindings({
+        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0,
+            m_shaderResourceStages,
+            _uniformBuffer1.get(),
+            bufferSize),
+    });
+    _srb1->create();
+    return 1;
+}
+
+int CurveRenderer::createPipline0()
+{
+    if (!_rhi || !_srb0)
+        return -1;
+
+    _pipeline0.reset(_rhi->newGraphicsPipeline());
+
+    _pipeline0->setShaderStages({
         {
             QRhiShaderStage::Vertex,
             getShader(QLatin1String(":/AnymateLab/shaders/curve.vert.qsb"))
@@ -90,40 +167,20 @@ int CurveRenderer::createPipline()
             // binding0
             { 0, 0, QRhiVertexInputAttribute::Float3, 0                 },
             // binding1
-            { 1, 3, QRhiVertexInputAttribute::Float4, 0 },
-            { 1, 4, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
-            { 1, 5, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
-            { 1, 6, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+            { 1, 1, QRhiVertexInputAttribute::Float4, 0 },
+            { 1, 2, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+            { 1, 3, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+            { 1, 4, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
          });
 
-    // view and projection uniform
-    int blockSize = sizeof(glm::mat4) +
-                    sizeof(glm::mat4)
-        ;
-    int bufferSize = _rhi->ubufAligned(blockSize);
-    _uniformBuffer.reset(_rhi->newBuffer(QRhiBuffer::Dynamic,
-                                         QRhiBuffer::UniformBuffer,
-                                         bufferSize));
-    _uniformBuffer->create();
 
-    _srb.reset(_rhi->newShaderResourceBindings());
-    _srb->setBindings({
-        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
-            0,
-            m_shaderResourceStages,
-            _uniformBuffer.get(),
-            bufferSize),
-    });
-    _srb->create();
-
-    _pipeline->setVertexInputLayout(inputLayout);
-    _pipeline->setSampleCount(_sampleCount);
-    _pipeline->setShaderResourceBindings(_srb.get());
-    _pipeline->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
-    _pipeline->setDepthTest(true);
-    _pipeline->setDepthWrite(true);
-    // _pipeline->setTopology(QRhiGraphicsPipeline::TriangleStrip);
-    _pipeline->setTopology(QRhiGraphicsPipeline::Triangles);
+    _pipeline0->setVertexInputLayout(inputLayout);
+    _pipeline0->setSampleCount(_sampleCount);
+    _pipeline0->setShaderResourceBindings(_srb0.get());
+    _pipeline0->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+    _pipeline0->setDepthTest(true);
+    _pipeline0->setDepthWrite(true);
+    _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
 
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
@@ -133,35 +190,110 @@ int CurveRenderer::createPipline()
     targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
     targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
-    _pipeline->setTargetBlends(targetBlends.begin(), targetBlends.end());
-    _pipeline->create();
+    _pipeline0->setTargetBlends(targetBlends.begin(), targetBlends.end());
+    _pipeline0->create();
 
     return 1;
 }
 
+
+int CurveRenderer::createPipline1()
+{
+    if (!_rhi || !_srb1)
+        return -1;
+
+    _pipeline1.reset(_rhi->newGraphicsPipeline());
+
+    _pipeline1->setShaderStages({
+        {
+            QRhiShaderStage::Vertex,
+            getShader(QLatin1String(":/AnymateLab/shaders/curve.vert.qsb"))
+        },
+        {
+            QRhiShaderStage::Fragment,
+            getShader(QLatin1String(":/AnymateLab/shaders/curve.frag.qsb"))
+        }
+    });
+
+    QRhiVertexInputLayout inputLayout;
+    inputLayout.setBindings(
+        {
+         { 3 * sizeof(float), QRhiVertexInputBinding::PerVertex },
+         { 64, QRhiVertexInputBinding::PerInstance },
+         });
+
+    inputLayout.setAttributes(
+        {
+         // binding0
+         { 0, 0, QRhiVertexInputAttribute::Float3, 0                 },
+         // binding1
+         { 1, 1, QRhiVertexInputAttribute::Float4, 0 },
+         { 1, 2, QRhiVertexInputAttribute::Float4, 4 * sizeof(float) },
+         { 1, 3, QRhiVertexInputAttribute::Float4, 8 * sizeof(float) },
+         { 1, 4, QRhiVertexInputAttribute::Float4, 12 * sizeof(float) },
+         });
+
+
+    _pipeline1->setVertexInputLayout(inputLayout);
+    _pipeline1->setSampleCount(_sampleCount);
+    _pipeline1->setShaderResourceBindings(_srb1.get());
+    _pipeline1->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
+    _pipeline1->setDepthTest(true);
+    _pipeline1->setDepthWrite(true);
+    _pipeline1->setTopology(QRhiGraphicsPipeline::Triangles);
+
+    QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
+    targetBlends[0].enable = true;
+    targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
+    targetBlends[0].dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opColor = QRhiGraphicsPipeline::Add;
+    targetBlends[0].srcAlpha = QRhiGraphicsPipeline::One;
+    targetBlends[0].dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
+    targetBlends[0].opAlpha = QRhiGraphicsPipeline::Add;
+    _pipeline1->setTargetBlends(targetBlends.begin(), targetBlends.end());
+    _pipeline1->create();
+
+    return 1;
+}
 
 void CurveRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (_rhi != rhi()) {
         _rhi = rhi();
         // ShowFreatures(m_rhi);
-        createBuffer();
-        _pipeline.reset();
+        createBuffer0();
+        createBuffer1();
+        _pipeline0.reset();
+        _pipeline1.reset();
     }
 
     if (_sampleCount != renderTarget()->sampleCount()) {
         _sampleCount = renderTarget()->sampleCount();
-        _pipeline.reset();
+        _pipeline0.reset();
+        _pipeline1.reset();
     }
 
     QRhiTexture *finalTex = _sampleCount > 1 ? resolveTexture() : colorTexture();
     if (_textureFormat != finalTex->format()) {
         _textureFormat = finalTex->format();
-        _pipeline.reset();
+        _pipeline0.reset();
+        _pipeline1.reset();
     }
 
-    if (!_pipeline) {
-        createPipline();
+    if (!_srb0) {
+        createShaderResourceBinding0();
+    }
+
+    if (!_srb1) {
+        createShaderResourceBinding1();
+    }
+
+    if (!_pipeline0) {
+        createPipline0();
+    }
+
+    if (!_pipeline1) {
+        createPipline1();
     }
 
 }
@@ -191,57 +323,126 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
     size_t offset = 0;
 
+    glm::vec4 borderColor = glm::vec4(1.0, 0.0, 0.0, 1.0);
+    glm::vec4 fillColor = glm::vec4(0.0, 1.0, 0.0, 1.0);
+
     offset = align(0, STD140_ALIGN_MAT4);
-    batch->updateDynamicBuffer(_uniformBuffer.get(),
+    batch->updateDynamicBuffer(_uniformBuffer0.get(),
                                offset,
                                sizeof(glm::mat4),
                                _view.constData());
-
     offset = align(sizeof(glm::mat4), STD140_ALIGN_MAT4);
-    batch->updateDynamicBuffer(_uniformBuffer.get(),
+    batch->updateDynamicBuffer(_uniformBuffer0.get(),
                                offset,
                                sizeof(glm::mat4),
                                _projection.constData());
 
-    // update VBO
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4),
+                   STD140_ALIGN_VEC4);
+    batch->updateDynamicBuffer(_uniformBuffer0.get(),
+                               offset,
+                               sizeof(glm::vec4),
+                               &borderColor);
+
+
+    offset = align(0, STD140_ALIGN_MAT4);
+    batch->updateDynamicBuffer(_uniformBuffer1.get(),
+                               offset,
+                               sizeof(glm::mat4),
+                               _view.constData());
+    offset = align(sizeof(glm::mat4), STD140_ALIGN_MAT4);
+    batch->updateDynamicBuffer(_uniformBuffer1.get(),
+                               offset,
+                               sizeof(glm::mat4),
+                               _projection.constData());
+    offset = align(sizeof(glm::mat4) + sizeof(glm::mat4),
+                   STD140_ALIGN_VEC4);
+    batch->updateDynamicBuffer(_uniformBuffer1.get(),
+                               offset,
+                               sizeof(glm::vec4),
+                               &fillColor);
+
+    // update border VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        glm::vec3* vertices = _shapes[i]->getVertices(GeometryShape::BorderVertex);
-        uint32_t bufferSize = _shapes[i]->getVertexBufferSize(GeometryShape::BorderVertex);
-        batch->uploadStaticBuffer(_vectexBuffer.get(), offset, bufferSize, vertices);
-        offset += bufferSize;
+        std::vector<glm::vec3>& vertices =
+            _shapes[i]->getVertices(GeometryShape::BorderVertex);
+        qint32 size = vertices.size() * sizeof(glm::vec3);
+        batch->uploadStaticBuffer(_vectexBuffer0.get(),
+                                  offset, size, vertices.data());
+        offset += size;
 
+        // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        // model = glm::rotate(model, qDegreesToRadians(_angle),
-        //                     glm::vec3(0.0f, 1.0f, 1.0f));
-        model = glm::scale(model, glm::vec3(1.0, 1.0, 0.0));
+        model = glm::rotate(model, qDegreesToRadians(_angle),
+                            glm::vec3(0.0f, 1.0f, 1.0f));
+        // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
-        batch->uploadStaticBuffer(_modelBuffer.get(),
+        batch->uploadStaticBuffer(_modelBuffer0.get(),
                                   i * sizeof(glm::mat4),
                                   sizeof(glm::mat4),
                                   &model);
     }
 
-    cb->resourceUpdate(batch);
-
-    cb->setGraphicsPipeline(_pipeline.get());
-    cb->setShaderResources(_srb.get());
-
+    // update shape VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        uint32_t vertexCount = _shapes[i]->getVertexCount(GeometryShape::BorderVertex);
-        uint32_t bufferSize = _shapes[i]->getVertexBufferSize(GeometryShape::BorderVertex);
+        // shape vertices
+        std::vector<glm::vec3>& vertices =
+            _shapes[i]->getVertices(GeometryShape::ShapeVertex);
+        qint32 size = vertices.size() * sizeof(glm::vec3);
+        batch->uploadStaticBuffer(_vectexBuffer1.get(),
+                                  offset, size, vertices.data());
+        offset += size;
 
+        // model vertices
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, qDegreesToRadians(_angle),
+                            glm::vec3(0.0f, 1.0f, 1.0f));
+        // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
+        model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
+        batch->uploadStaticBuffer(_modelBuffer1.get(),
+                                  i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4),
+                                  &model);
+    }
+    cb->resourceUpdate(batch);
+
+    cb->setGraphicsPipeline(_pipeline0.get());
+    cb->setShaderResources(_srb0.get());
+    offset = 0;
+    for (int i = 0; i < _shapes.size(); i ++) {
+        std::vector<glm::vec3>& vertices =
+            _shapes[i]->getVertices(GeometryShape::BorderVertex);
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
-            { _vectexBuffer.get(), offset },
-            { _modelBuffer.get(), i * sizeof(glm::mat4) }
+            { _vectexBuffer0.get(), offset },
+            { _modelBuffer0.get(), i * sizeof(glm::mat4) }
         };
         cb->setVertexInput(0, 2, inputBindings);
-        cb->draw(vertexCount);
-
-        offset += bufferSize;
+        cb->draw(vertices.size());
+        offset += vertices.size() * sizeof(glm::vec3);
     }
 
+    cb->setGraphicsPipeline(_pipeline1.get());
+    cb->setShaderResources(_srb1.get());
+    offset = 0;
+    for (int i = 0; i < _shapes.size(); i ++) {
+        std::vector<glm::vec3>& vertices =
+            _shapes[i]->getVertices(GeometryShape::ShapeVertex);
+
+        for (int i = 0; i < vertices.size(); i ++) {
+            vertices[i].z = -000.1;
+        }
+
+        const QRhiCommandBuffer::VertexInput inputBindings[] = {
+            { _vectexBuffer1.get(), offset },
+            { _modelBuffer1.get(), i * sizeof(glm::mat4) }
+        };
+
+        cb->setVertexInput(0, 2, inputBindings);
+        cb->draw(vertices.size());
+        offset += vertices.size() * sizeof(glm::vec3);
+    }
 
     cb->endPass();
 }
@@ -251,6 +452,10 @@ void CurveRenderer::synchronize(QQuickRhiItem *rhiItem)
     Curve *item = static_cast<Curve *>(rhiItem);
     if (item->angle() != _angle)
         _angle = item->angle();
+
+
+    if (item->scale() != _scale)
+        _scale = item->scale();
 
     _shapes = item->getShapes();
 
@@ -267,15 +472,16 @@ Curve::Curve()
     setAcceptedMouseButtons(Qt::LeftButton);
     setFlag(ItemAcceptsInputMethod, true);
 
-    Anymate::RoundedRect* rect0 = new Anymate::RoundedRect(0.0, 0.0,
-                                                           100.0, 100.0,
-                                                           5.0,
+    Anymate::RoundedRect* rect0 = new Anymate::RoundedRect(0.0,
+                                                           0.0,
+                                                           100.0,
+                                                           100.0,
                                                            30.0,
-                                                           2.0,
-                                                           50.0);
-    rect0->setBorderWidth(1.0);
+                                                           30.0,
+                                                           30.0,
+                                                           30.0);
+    rect0->setBorderWidth(4.0);
     rect0->createVertices();
-
 
     // Anymate::Rectangle* rect1 = new Anymate::Rectangle();
     // rect1->setX(100.0);
@@ -426,6 +632,21 @@ void Curve::setAngle(float a)
         return;
 
     _angle = a;
+    emit angleChanged();
+    update();
+}
+
+float Curve::scale() const
+{
+    return _scale;
+}
+
+void Curve::setScale(float s)
+{
+    if (_scale == s)
+        return;
+
+    _scale = s;
     emit angleChanged();
     update();
 }

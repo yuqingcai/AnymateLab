@@ -95,14 +95,14 @@ public:
     void setShapePrecision(uint32_t precision);
     uint32_t getShapePrecision();
 
-    glm::vec3* getVertices(VertexType type);
+    std::vector<glm::vec3>& getVertices(VertexType type);
     virtual void createVertices();
 
-    uint32_t getVertexCount(VertexType type);
-    uint32_t getVertexBufferSize(VertexType type);
-
-
 protected:
+
+    virtual void createOutlinePoints();
+    virtual void createBorderVierices() = 0;
+    virtual void createShapeVierices() = 0;
 
     static const uint32_t defaultShapePrecision = 200;
 
@@ -117,17 +117,15 @@ protected:
 
     uint32_t _shapePrecision;
 
-    glm::vec3* _shapeVertices;
-    uint32_t _shapeVertexCount;
-    uint32_t _shapeVertexBufferSize;
-
-    glm::vec3* _borderVertices;
-    uint32_t _borderVertexCount;
-    uint32_t _borderVertexBufferSize;
+    std::vector<glm::vec3> _outlinePoints;
+    std::vector<glm::vec3> _borderVertices;
+    std::vector<glm::vec3> _shapeVertices;
+    std::vector<glm::vec3> _errorVertices;
 
     glm::mat4 _rotateMatrix;
     glm::mat4 _scaleMatrix;
     glm::mat4 _shearingMatrix;
+
 };
 
 class RoundedRect : public GeometryShape
@@ -136,13 +134,15 @@ public:
     RoundedRect();
     RoundedRect(float x, float y, float width, float height,
                 float leftTopRadius, float rightTopRadius,
-                float leftBottomRadius, float rightBottomRadius);
+                float rightBottomRadius, float leftBottomRadius);
     virtual ~ RoundedRect();
-    virtual void createVertices() override;
+    void createVertices() override;
 
 protected:
-    void createBorderVierices();
-    void createShapeVierices();
+    void createOutlinePoints() override;
+    void createBorderVierices()override;
+    void createShapeVierices() override;
+
     float _leftTopRadius;
     float _rightTopRadius;
     float _leftBottomRadius;
@@ -170,7 +170,7 @@ public:
     Bezier(std::initializer_list<glm::vec2> list);
     virtual ~ Bezier();
     void appendPoint(glm::vec2 point);
-    virtual void createVertices() override;
+    void createVertices() override;
 
 protected:
 
