@@ -8,6 +8,27 @@
 
 namespace Anymate {
 
+class LinearGradient
+{
+public:
+    LinearGradient();
+    LinearGradient(std::initializer_list<glm::vec3> colors);
+    ~LinearGradient();
+
+private:
+    std::vector<glm::vec4> _colors;
+};
+
+class RadialGradient
+{
+public:
+    RadialGradient();
+    RadialGradient(std::initializer_list<glm::vec3> colors);
+    ~RadialGradient();
+
+private:
+    std::vector<glm::vec4> _colors;
+};
 
 class Graphic
 {
@@ -33,31 +54,11 @@ protected:
     float _height;
 };
 
-class LinearGradient
-{
-public:
-    LinearGradient();
-    LinearGradient(std::initializer_list<glm::vec3> colors);
-    ~LinearGradient();
-
-private:
-    std::vector<glm::vec4> _colors;
-};
-
-class RadialGradient
-{
-public:
-    RadialGradient();
-    RadialGradient(std::initializer_list<glm::vec3> colors);
-    ~RadialGradient();
-
-private:
-    std::vector<glm::vec4> _colors;
-};
 
 class GeometryShape : public Graphic
 {
 public:
+
     enum BorderStyle {
         NoBorder,
         SolidLineBorder,
@@ -65,6 +66,12 @@ public:
         DotLineBorder,
         DashDotLineBorder,
         DashDotDotLineBorder,
+    };
+
+    enum JoinStyle {
+        BevelJoin,
+        MiterJoin,
+        RoundJoin,
     };
 
     enum FillStyle {
@@ -92,19 +99,19 @@ public:
     void setBorderWidth(float borderWidth);
     float getBorderWidth();
 
-    void setShapePrecision(uint32_t precision);
-    uint32_t getShapePrecision();
-
     std::vector<glm::vec3>& getVertices(VertexType type);
     virtual void createVertices();
 
 protected:
 
-    virtual void createOutlinePoints();
-    virtual void createBorderVierices() = 0;
-    virtual void createShapeVierices() = 0;
+    constexpr const static float borderVerticesZWeight = 0.0;
+    constexpr const static float shapeVerticesZWeight = -0.01;
 
-    static const uint32_t defaultShapePrecision = 200;
+    virtual void createOutlinePoints();
+    virtual void createBorderVertices();
+    virtual void createShapeVertices();
+    bool isCuspIndex(int i);
+    glm::vec3 orthogonal(glm::vec3& p0, glm::vec3& p1);
 
     float _borderWidth;
     BorderStyle _borderStyle;
@@ -115,12 +122,11 @@ protected:
     LinearGradient _fillLinearGradient;
     RadialGradient _fillRadialGradient;
 
-    uint32_t _shapePrecision;
-
     std::vector<glm::vec3> _outlinePoints;
     std::vector<glm::vec3> _borderVertices;
     std::vector<glm::vec3> _shapeVertices;
     std::vector<glm::vec3> _errorVertices;
+    std::vector<int> _cuspIndexes;
 
     glm::mat4 _rotateMatrix;
     glm::mat4 _scaleMatrix;
@@ -136,12 +142,11 @@ public:
                 float leftTopRadius, float rightTopRadius,
                 float rightBottomRadius, float leftBottomRadius);
     virtual ~ RoundedRect();
-    void createVertices() override;
 
 protected:
+    constexpr const static float minCornerRadius = 1.0;
+
     void createOutlinePoints() override;
-    void createBorderVierices()override;
-    void createShapeVierices() override;
 
     float _leftTopRadius;
     float _rightTopRadius;
@@ -156,11 +161,25 @@ public:
     Oval();
     Oval(float x, float y, float width, float height);
     virtual ~ Oval();
-    virtual void createVertices() override;
+
 protected:
+    void createOutlinePoints() override;
 
 private:
 
+};
+
+class Rect : public GeometryShape
+{
+public:
+    Rect();
+    Rect(float x, float y, float width, float height);
+    virtual ~ Rect();
+
+protected:
+    void createOutlinePoints() override;
+    void createBorderVertices() override;
+    void createShapeVertices() override;
 };
 
 class Bezier : public GeometryShape
@@ -170,9 +189,9 @@ public:
     Bezier(std::initializer_list<glm::vec2> list);
     virtual ~ Bezier();
     void appendPoint(glm::vec2 point);
-    void createVertices() override;
 
 protected:
+    void createOutlinePoints() override;
 
     glm::vec2 bezier(float t, const glm::vec2& p0, const glm::vec2& p1,
                      const glm::vec2& p2, const glm::vec2& p3);
@@ -181,6 +200,22 @@ private:
     std::vector<glm::vec2> _points;
 };
 
+
+class Polygon: public GeometryShape
+{
+public:
+    Polygon();
+    Polygon(std::initializer_list<glm::vec3> list);
+    virtual ~ Polygon();
+
+protected:
+    glm::vec3 getCenter();
+    void createOutlinePoints() override;
+    void createBorderVertices() override;
+    void createShapeVertices() override;
+
+    std::vector<glm::vec3> _points;
+};
 
 }
 
