@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(AnymateLab VERSION 0.1 LANGUAGES CXX)
-
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_definitions(-DANYMATE_DEBUG)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools)
 
@@ -26,6 +28,19 @@ qt_add_executable(appAnymateLab
     texturerenderer.cpp
     graphic.h
     graphic.cpp
+    color.h
+    color.cpp
+    earclipping.h
+    earclipping.cpp
+    pen.h
+    pen.cpp
+    anymatenamespace.h
+    outline.h
+    outline.cpp
+    vertexgenerator.h
+    vertexgenerator.cpp
+    tools.h
+    tools.cpp
     ${RESOURCES}
 )
 

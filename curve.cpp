@@ -180,8 +180,8 @@ int CurveRenderer::createPipline0()
     _pipeline0->setRenderPassDescriptor(renderTarget()->renderPassDescriptor());
     _pipeline0->setDepthTest(true);
     _pipeline0->setDepthWrite(true);
-    _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
-
+    // _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
+    _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
     targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
@@ -324,7 +324,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     size_t offset = 0;
 
     glm::vec4 borderColor = glm::vec4(1.0, 0.0, 0.0, 1.0);
-    glm::vec4 fillColor = glm::vec4(0.0, 1.0, 0.0, 1.0);
+    glm::vec4 fillColor = glm::vec4(1.0, 1.0, 0.0, 1.0);
 
     offset = align(0, STD140_ALIGN_MAT4);
     batch->updateDynamicBuffer(_uniformBuffer0.get(),
@@ -365,17 +365,14 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     // update border VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices =
-            _shapes[i]->getVertices(GeometryShape::BorderVertex);
-        qint32 size = vertices.size() * sizeof(glm::vec3);
-        batch->uploadStaticBuffer(_vectexBuffer0.get(),
-                                  offset, size, vertices.data());
+        std::vector<glm::vec3>& borderVertices = _shapes[i]->getBorderVertices();
+        qint32 size = borderVertices.size() * sizeof(glm::vec3);
+        batch->uploadStaticBuffer(_vectexBuffer0.get(), offset, size, borderVertices.data());
         offset += size;
 
         // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, qDegreesToRadians(_angle),
-                            glm::vec3(0.0f, 1.0f, 1.0f));
+        // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 1.0f));
         // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
         batch->uploadStaticBuffer(_modelBuffer0.get(),
@@ -388,17 +385,14 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
         // shape vertices
-        std::vector<glm::vec3>& vertices =
-            _shapes[i]->getVertices(GeometryShape::ShapeVertex);
-        qint32 size = vertices.size() * sizeof(glm::vec3);
-        batch->uploadStaticBuffer(_vectexBuffer1.get(),
-                                  offset, size, vertices.data());
+        std::vector<glm::vec3>& shapeVertices = _shapes[i]->getShapeVertices();
+        qint32 size = shapeVertices.size() * sizeof(glm::vec3);
+        batch->uploadStaticBuffer(_vectexBuffer1.get(), offset, size, shapeVertices.data());
         offset += size;
 
         // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, qDegreesToRadians(_angle),
-                            glm::vec3(0.0f, 1.0f, 1.0f));
+        // model = glm::rotate(model, qDegreesToRadians(_angle),glm::vec3(0.0f, 1.0f, 1.0f));
         // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
         batch->uploadStaticBuffer(_modelBuffer1.get(),
@@ -412,23 +406,21 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     cb->setShaderResources(_srb0.get());
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices =
-            _shapes[i]->getVertices(GeometryShape::BorderVertex);
+        std::vector<glm::vec3>& borderVertices = _shapes[i]->getBorderVertices();
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer0.get(), offset },
             { _modelBuffer0.get(), i * sizeof(glm::mat4) }
         };
         cb->setVertexInput(0, 2, inputBindings);
-        cb->draw(vertices.size());
-        offset += vertices.size() * sizeof(glm::vec3);
+        cb->draw(borderVertices.size());
+        offset += borderVertices.size() * sizeof(glm::vec3);
     }
 
     cb->setGraphicsPipeline(_pipeline1.get());
     cb->setShaderResources(_srb1.get());
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices =
-            _shapes[i]->getVertices(GeometryShape::ShapeVertex);
+        std::vector<glm::vec3>& shapeVertices = _shapes[i]->getShapeVertices();
 
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer1.get(), offset },
@@ -436,8 +428,8 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
         };
 
         cb->setVertexInput(0, 2, inputBindings);
-        cb->draw(vertices.size());
-        offset += vertices.size() * sizeof(glm::vec3);
+        cb->draw(shapeVertices.size());
+        offset += shapeVertices.size() * sizeof(glm::vec3);
     }
 
     cb->endPass();
@@ -481,22 +473,10 @@ Curve::Curve()
     // oval->createVertices();
     // _shapes.push_back(oval);
 
-    Anymate::Rect* rect1 = new Anymate::Rect(0.0, 0.0, 20.6, 30.05);
-    rect1->setBorderWidth(1.0);
-    rect1->createVertices();
-    _shapes.push_back(rect1);
-
-
-
-    Anymate::Polygon* polygon = new Anymate::Polygon({
-        glm::vec3(-100.0, 30, 0.0),
-        glm::vec3(50.0, 100.0, 0.0),
-        glm::vec3(100.0, -10.0, 0.0),
-        glm::vec3(-10.0, -100.0, 0.0),
-    });
-    polygon->setBorderWidth(1.0);
-    polygon->createVertices();
-    _shapes.push_back(polygon);
+    // Anymate::Rect* rect1 = new Anymate::Rect(0.0, 0.0, 20.6, 30.05);
+    // rect1->setBorderWidth(1.0);
+    // rect1->createVertices();
+    // _shapes.push_back(rect1);
 
     // Anymate::Bezier* curve = new Anymate::Bezier({
     //     glm::vec2( -100.0, -100.0),
@@ -507,6 +487,79 @@ Curve::Curve()
     // curve->generateVertices();
     // _shapes.push_back(curve);
 
+
+
+
+    // const int numVertices = 10;
+    // // 外部半径和内部半径
+    // float r_outer = 100.0f;
+    // float r_inner = 50.0f;
+
+    // // 角度步长
+    // float angleStep = glm::radians(360.0f / 5.0f); // 每个顶点之间的角度为72度
+
+    // // 用于存储五角星顶点的坐标
+    // std::vector<glm::vec3> starVertices;
+
+    // for (int i = 0; i < numVertices; ++i) {
+    //     // 根据顶点是外部还是内部选择半径
+    //     float radius = (i % 2 == 0) ? r_outer : r_inner;
+
+    //     // 计算当前顶点的角度
+    //     float angle = i * angleStep;
+
+    //     // 计算顶点坐标 (极坐标转换为直角坐标)
+    //     float x = radius * cos(angle);
+    //     float y = radius * sin(angle);
+
+    //     // 将顶点添加到列表
+    //     starVertices.push_back(glm::vec3(x, y, 0.0));
+    // }
+
+    // Anymate::Polygon* polygon = new Anymate::Polygon(starVertices);
+
+    // Anymate::Polygon* polygon0 = new Anymate::Polygon({
+
+        // glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(100.0, 100.0, 0.0),
+        // glm::vec3(200.0, 100.0, 0.0),
+        // glm::vec3(300.0, 0.0, 0.0),
+        // glm::vec3(200.0, -100.0, 0.0),
+        // glm::vec3(100.0, -100.0, 0.0),
+
+        // glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(100.0, -50.0, 0.0),
+        // glm::vec3(200.0, 0.0, 0.0),
+        // glm::vec3(100.0, 100.0, 0.0),
+
+        // glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(100.0, 100.0, 0.0),
+        // glm::vec3(200.0, 0.0, 0.0),
+        // glm::vec3(100.0, 50.0, 0.0),
+    // });
+
+    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::NoJoin, 10);
+    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::BevelJoin, 10);
+    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::MiterJoin, 10);
+    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::RoundJoin, 10);
+
+    // polygon0->setPen(pen0);
+    // polygon0->draw();
+    // _shapes.push_back(polygon0);
+
+    Anymate::Polygon* polygon1 = new Anymate::Polygon({
+        glm::vec3(-100.0, 100.0, 0.0),
+        glm::vec3(100.0, 100.0, 0.0),
+        glm::vec3(100.0, -100.0, 0.0),
+        glm::vec3(-100.0, -100.0, 0.0),
+    });
+    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::NoJoin, 10);
+    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::BevelJoin, 10);
+    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::MiterJoin, 10);
+    Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::RoundJoin, 10);
+    polygon1->setPen(pen1);
+    polygon1->draw();
+    _shapes.push_back(polygon1);
 
 }
 
