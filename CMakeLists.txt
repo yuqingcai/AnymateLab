@@ -34,7 +34,7 @@ qt_add_executable(appAnymateLab
     earclipping.cpp
     pen.h
     pen.cpp
-    anymatenamespace.h
+    vangohnamespace.h
     outline.h
     outline.cpp
     vertexgenerator.h

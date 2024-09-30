@@ -1,6 +1,6 @@
 #include "pen.h"
 
-namespace Anymate {
+namespace Vangoh {
 
 Pen::Pen(PenStyle style, CapStyle cap, JoinStyle join, float width)
     :

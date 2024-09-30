@@ -62,7 +62,7 @@ private:
     QPointF _focus = {0.0f, 0.0f};
 
 
-    std::vector<Anymate::GeometryShape*> _shapes;
+    std::vector<Vangoh::GeometryShape*> _shapes;
 
 };
 
@@ -87,7 +87,7 @@ public:
     float getZoom();
     QPointF& getFocus();
 
-    std::vector<Anymate::GeometryShape*>& getShapes();
+    std::vector<Vangoh::GeometryShape*>& getShapes();
 
 
 protected:
@@ -106,7 +106,7 @@ signals:
 
 private:
 
-    std::vector<Anymate::GeometryShape*> _shapes;
+    std::vector<Vangoh::GeometryShape*> _shapes;
 
     float _angle = 0.0f;
     float _scale = 1.0f;

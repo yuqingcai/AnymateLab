@@ -2,12 +2,11 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-#include <format>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
-namespace Anymate {
+namespace Vangoh {
 
 glm::vec2 normalize(const glm::vec2& p0, const glm::vec2& p1)
 {
@@ -148,20 +147,6 @@ float angle2Vectors(const glm::vec2& v0, const glm::vec2& v1,
         }
     }
     return angle;
-}
-
-void printPoint(const glm::vec3& p)
-{
-    std::string result = std::format("({:.1f}, {:.1f}, {:.1f}) ", p.x, p.y, p.z);
-    std::cout << result << std::endl;
-}
-
-
-void printPoints(const std::vector<glm::vec3> points)
-{
-    for (auto p : points) {
-        printPoint(p);
-    }
 }
 
 }

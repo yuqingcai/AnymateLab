@@ -1,12 +1,10 @@
 #include "graphic.h"
 #include "tools.h"
 #include <cmath>
-#include <iostream>
 #include <cstring>
 #include <algorithm>
-#include <format>
 
-namespace Anymate {
+namespace Vangoh {
 
 Graphic::Graphic():
     _x(0.0),

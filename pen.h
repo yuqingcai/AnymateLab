@@ -1,11 +1,11 @@
 #ifndef PEN_H
 #define PEN_H
 
-#include "anymatenamespace.h"
+#include "vangohnamespace.h"
 #include <vector>
 #include <glm/glm.hpp>
 
-namespace Anymate {
+namespace Vangoh {
 
 class Pen
 {

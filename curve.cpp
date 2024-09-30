@@ -518,7 +518,7 @@ Curve::Curve()
 
     // Anymate::Polygon* polygon = new Anymate::Polygon(starVertices);
 
-    // Anymate::Polygon* polygon0 = new Anymate::Polygon({
+    // Vangoh::Polygon* polygon0 = new Vangoh::Polygon({
 
         // glm::vec3(0.0, 0.0, 0.0),
         // glm::vec3(100.0, 100.0, 0.0),
@@ -538,25 +538,25 @@ Curve::Curve()
         // glm::vec3(100.0, 50.0, 0.0),
     // });
 
-    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::NoJoin, 10);
-    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::BevelJoin, 10);
-    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::MiterJoin, 10);
-    // Anymate::Pen pen0(Anymate::SolidLine, Anymate::FlatCap, Anymate::RoundJoin, 10);
+    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 10);
+    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 10);
+    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 10);
+    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 10);
 
     // polygon0->setPen(pen0);
     // polygon0->draw();
     // _shapes.push_back(polygon0);
 
-    Anymate::Polygon* polygon1 = new Anymate::Polygon({
+    Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
         glm::vec3(-100.0, 100.0, 0.0),
         glm::vec3(100.0, 100.0, 0.0),
         glm::vec3(100.0, -100.0, 0.0),
         glm::vec3(-100.0, -100.0, 0.0),
     });
-    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::NoJoin, 10);
-    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::BevelJoin, 10);
-    // Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::MiterJoin, 10);
-    Anymate::Pen pen1(Anymate::SolidLine, Anymate::FlatCap, Anymate::RoundJoin, 10);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 10);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 10);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 10);
+    Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 10);
     polygon1->setPen(pen1);
     polygon1->draw();
     _shapes.push_back(polygon1);
@@ -571,7 +571,7 @@ Curve::~Curve()
     _shapes.clear();
 }
 
-std::vector<Anymate::GeometryShape*>& Curve::getShapes()
+std::vector<Vangoh::GeometryShape*>& Curve::getShapes()
 {
     return _shapes;
 }

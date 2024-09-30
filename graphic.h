@@ -9,7 +9,7 @@
 #include "pen.h"
 #include "vertexgenerator.h"
 
-namespace Anymate {
+namespace Vangoh {
 
 class Graphic
 {
