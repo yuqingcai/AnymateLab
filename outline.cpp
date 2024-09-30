@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdio.h>
 #include "outline.h"
 #include "tools.h"
 
