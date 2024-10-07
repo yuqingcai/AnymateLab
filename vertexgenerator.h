@@ -16,8 +16,9 @@ public:
 
 private:
 
+
     std::vector<glm::vec2> createOutlineSegment(
-        Outline& outline, int index, float weight, JoinStyle joinStyle);
+        Outline& outline, int from, int to, float weight, JoinStyle joinStyle);
 
 };
 }

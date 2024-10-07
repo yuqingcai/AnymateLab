@@ -87,6 +87,11 @@ std::vector<glm::vec3>& GeometryShape::getBorderVertices()
     return _borderVertices;
 }
 
+std::vector<glm::vec3>& GeometryShape::getBorderGuideLineVertices()
+{
+    return _borderGuideLineVertices;
+}
+
 std::vector<glm::vec3>& GeometryShape::getShapeVertices()
 {
     return _shapeVertices;
@@ -106,15 +111,23 @@ void GeometryShape::draw()
 void GeometryShape::createBorderVertices()
 {
     createOutline();
-    std::vector<glm::vec2> vertices = _vertexGenerator.generate(_pen, _outline);
-    // std::vector<glm::vec2> vertices = _vertexGenerator.guideLines(_pen, _outline);
+    _outline.print();
 
+    std::vector<glm::vec2> vertices;
+
+    vertices = _vertexGenerator.generate(_pen, _outline);
     _borderVertices.clear();
-
     for (glm::vec2 p : vertices) {
         _borderVertices.push_back(glm::vec3(p.x, p.y, borderVerticesZWeight));
     }
 
+    vertices = _vertexGenerator.guideLines(_pen, _outline);
+    _borderGuideLineVertices.clear();
+
+    for (glm::vec2 p : vertices) {
+        _borderGuideLineVertices.push_back(
+            glm::vec3(p.x, p.y, borderGuideLineVerticesZWeight));
+    }
 }
 
 void GeometryShape::createShapeVertices()
@@ -170,77 +183,78 @@ void Polygon::createOutline()
         points2D.push_back(glm::vec2(p.x, p.y));
     }
 
-    bool joinLastSegment = false;
     float tail = 0.0;
+    float step = 0.0;
 
     for (int i = 0; i < n; i ++) {
 
-        int k = i + 1;
+        int j = i + 1;
+
         if (i == n-1) {
-            k = 0;
+            j = 0;
         }
 
         glm::vec2& p0 = points2D[i];
-        glm::vec2& p1 = points2D[k];
+        glm::vec2& p1 = points2D[j];
         float distance = glm::distance(p0, p1);
-        float steps = 0.0;
-
-        if (tail > FLT_EPSILON) {
-            steps = tail;
-            joinLastSegment = true;
-        }
-        else {
-            steps = outlineSegmentPrecision;
-            joinLastSegment = false;
-        }
-
-        glm::vec2 p0_ = p0;
         glm::vec2 p;
 
-        while (true) {
-            p = pointRelateTo(p0_, p1, steps);
-            float distance_ = glm::distance(p0, p);
+        if (!_outline.getPoints().size() ||
+            _outline.getPoints().back().getPosition() != p0){
+            _outline.appendPosition(p0);
+        }
 
-            if (distance_ < distance) {
-
-                if (joinLastSegment) {
-                    _outline.lastSegmentAppendAnchor(p);
-                    joinLastSegment = false;
-                    steps = outlineSegmentPrecision;
-                }
-                else {
-                    _outline.appendSegment(p0_, p);
-                }
-
-                p0_ = p;
+        if (tail <= FLT_EPSILON) {
+            p = p0;
+        }
+        else {
+            if (fabs(tail - distance) < FLT_EPSILON) {
+                _outline.appendPosition(p1);
+                _outline.getPoints().back().setCuspPoint(true);
+                tail = 0.0;
+                // next segment
+                continue;
             }
-            else {
-                if (fabs(distance_ - distance) < FLT_EPSILON) {
-                    tail = 0.0;
-                }
-                else if (distance_ > distance) {
-                    tail = distance_ - distance;
-                }
+            else if (tail < distance) {
+                p = pointRelateTo(p0, p1, tail);
+                _outline.appendPosition(p);
+            }
+            else if (tail > distance){
+                _outline.appendPosition(p1);
+                _outline.getPoints().back().setCuspPoint(true);
+                _outline.getPoints().back().setBreakPoint(true);
+                tail -= distance;
+                // next segment
+                continue;
+            }
+        }
 
-                p = p1;
+        step = Vangoh::outlinePrecision;
+        while (true) {
 
-                if (joinLastSegment) {
-                    _outline.lastSegmentAppendAnchor(p);
-                }
-                else {
-                    OutlineSegment segment = OutlineSegment({p0_, p});
-                    segment.setContainCusp(true);
-                    _outline.appendSegment(segment);
-                }
+            p = pointRelateTo(p, p1, step);
+            float distanceP = glm::distance(p0, p);
 
+            if (distanceP < distance) {
+                _outline.appendPosition(p);
+            }
+            else if (fabs(distanceP - distance) < FLT_EPSILON) {
+                _outline.appendPosition(p1);
+                _outline.getPoints().back().setCuspPoint(true);
+                tail = 0.0;
+                break;
+            }
+            else if (distanceP > distance){
+                _outline.appendPosition(p1);
+                _outline.getPoints().back().setCuspPoint(true);
+                _outline.getPoints().back().setBreakPoint(true);
+                tail = distanceP - distance;
                 break;
             }
         }
     }
 
-    // _outline.print();
 }
-
 
 glm::vec3 Polygon::getCenter()
 {

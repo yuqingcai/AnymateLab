@@ -1,5 +1,7 @@
 #include "vertexgenerator.h"
 #include <iostream>
+#include <cmath>
+#include "tools.h"
 
 namespace Vangoh {
 
@@ -13,73 +15,62 @@ VertexGenerator::~VertexGenerator()
 
 }
 
-std::vector<glm::vec2> VertexGenerator::createOutlineSegment(
-    Outline& outline, int index, float weight, JoinStyle joinStyle)
+std::vector<glm::vec2>
+VertexGenerator::createOutlineSegment(Outline& outline, int from, int to,
+                                      float weight, JoinStyle joinStyle)
 {
     std::vector<glm::vec2> vertices;
-    std::vector<OutlineSegment>& segments = outline.getSegments();
 
-    if (!segments.size()) {
+    std::vector<OutlinePoint>& points = outline.getPoints();
+    int n = points.size();
+    if (!n || n < 2 || from >= n || to >= n) {
         return vertices;
     }
 
-    OutlineSegment segment = segments[index];
-    std::vector<glm::vec2> anchors = segment.getAnchors();
+    float w = weight / 2.0;
 
-    if (anchors.size() == 3) {
-        OutlineSegmentFrame frame0(weight, anchors[0], anchors[1]);
-        OutlineSegmentFrame frame1(weight, anchors[1], anchors[2]);
+    printf("from:%d to:%d\n", from, to);
+    fflush(stdout);
 
-        frame0.pushTrianglePoints(vertices);
-        frame1.pushTrianglePoints(vertices);
+    for (int i = from; i <= to; i ++) {
 
-        std::vector<glm::vec2> gap = frame0.createGapShape(frame1, joinStyle);
-        vertices.insert(vertices.end(), gap.begin(), gap.end());
-        std::vector<glm::vec2> ints = frame0.createIntersectionsShape(frame1, joinStyle);
-        vertices.insert(vertices.end(), ints.begin(), ints.end());
+        if (points[i].isCuspPoint()) {
+            // glm::vec2 pi = points[i].getPosition();
 
-        if (index == segments.size() -1 && outline.isClosedPath()) {
-            OutlineSegment next = segments[0];
-            anchors = next.getAnchors();
-            OutlineSegmentFrame frame2(weight, anchors[0], anchors[1]);
+            // glm::vec2 pk = points[i - 1].getPosition();
+            // glm::vec2 normal = orthogonal(pk, pi, CounterClockwise);
+            // glm::vec2 p0 = pi + (normal * (w));
+            // glm::vec2 p1 = pi - (normal * (w));
 
-            std::vector<glm::vec2> gap = frame1.createGapShape(frame2, joinStyle);
-            vertices.insert(vertices.end(), gap.begin(), gap.end());
-            std::vector<glm::vec2> ints = frame1.createIntersectionsShape(frame2, joinStyle);
-            vertices.insert(vertices.end(), ints.begin(), ints.end());
+            // pk = points[i + 1].getPosition();
+            // normal = orthogonal(pi, pk, CounterClockwise);
+            // glm::vec2 p2 = pi + (normal * (w));
+            // glm::vec2 p3 = pi - (normal * (w));
+
+            // vertices.push_back(pi);
+            // vertices.push_back(p2);
+            // vertices.push_back(p0);
         }
-    }
-    else if (anchors.size() == 2) {
-        OutlineSegmentFrame frame0(weight, anchors[0], anchors[1]);
-        frame0.pushTrianglePoints(vertices);
+        else {
+            int j = i + 1;
+            glm::vec2 pi = points[i].getPosition();
+            glm::vec2 pj = points[j].getPosition();
+            glm::vec2 normal = orthogonal(pi,pj, CounterClockwise);
+            glm::vec2 p0 = pi + (normal * (w));
+            glm::vec2 p1 = pi - (normal * (w));
+            glm::vec2 p2 = pj + (normal * (w));
+            glm::vec2 p3 = pj - (normal * (w));
 
-        if (segment.containCusp()) {
-            if (index < segments.size() -1) {
-                OutlineSegment next = segments[index+1];
-                anchors = next.getAnchors();
-
-                OutlineSegmentFrame frame1(weight, anchors[0], anchors[1]);
-                std::vector<glm::vec2> gap = frame0.createGapShape(frame1, joinStyle);
-                vertices.insert(vertices.end(), gap.begin(), gap.end());
-                std::vector<glm::vec2> ints = frame0.createIntersectionsShape(frame1, joinStyle);
-                vertices.insert(vertices.end(), ints.begin(), ints.end());
-            }
-            else {
-                if (outline.isClosedPath()) {
-                    OutlineSegment next = segments[0];
-                    anchors = next.getAnchors();
-
-                    OutlineSegmentFrame frame1(weight, anchors[0], anchors[1]);
-                    std::vector<glm::vec2> gap = frame0.createGapShape(frame1, joinStyle);
-                    vertices.insert(vertices.end(), gap.begin(), gap.end());
-                    std::vector<glm::vec2> ints = frame0.createIntersectionsShape(frame1, joinStyle);
-                    vertices.insert(vertices.end(), ints.begin(), ints.end());
-
-                }
-            }
+            vertices.push_back(p0);
+            vertices.push_back(p1);
+            vertices.push_back(p3);
+            vertices.push_back(p3);
+            vertices.push_back(p2);
+            vertices.push_back(p0);
         }
 
     }
+
 
     return vertices;
 }
@@ -89,18 +80,39 @@ std::vector<glm::vec2> VertexGenerator::generate(Pen& pen, Outline& outline)
 {
     std::vector<glm::vec2> vertices;
 
-    std::vector<OutlineSegment>& segments = outline.getSegments();
-    if (!segments.size()) {
+    std::vector<OutlinePoint>& points = outline.getPoints();
+    int n = points.size();
+    if (!n || n < 2) {
         return vertices;
     }
 
-    for (int i = 0; i < segments.size(); i ++) {
-        // if (i % 5 == 1) {
-            std::vector<glm::vec2> segment = createOutlineSegment(outline, i,
-                pen.getWidth(), pen.getJoinStyle());
+
+    int steps = static_cast<int>(std::round(pen.getWidth()));
+    float weight = pen.getWidth();
+    JoinStyle style = pen.getJoinStyle();
+
+    int j = 0;
+    int c = 0;
+    for (int i = 0; i < n; i ++) {
+        OutlinePoint& point = points[i];
+
+        if (c == 0) {
+            j = i;
+        }
+
+        if (!point.isBreakPoint()) {
+            c ++;
+        }
+
+        if (c == steps || i == n - 2) {
+            std::vector<glm::vec2> segment =
+                createOutlineSegment(outline, j, i, weight, style);
             vertices.insert(vertices.end(), segment.begin(), segment.end());
-        // }
+            c = 0;
+        }
+
     }
+
 
     return vertices;
 }
@@ -110,78 +122,76 @@ std::vector<glm::vec2> VertexGenerator::guideLines(Pen& pen, Outline& outline)
 {
     std::vector<glm::vec2> vertices;
 
-    // std::vector<OutlineSegment>& segments = outline.getSegments();
-    // if (!segments.size()) {
-    //     return vertices;
-    // }
+    std::vector<OutlinePoint>& points = outline.getPoints();
+    int n = points.size();
+    if (!n) {
+        return vertices;
+    }
 
-    // for (int i = 0; i < segments.size(); i ++) {
+    for (int i = 0; i < n; i ++) {
+        float weight = pen.getWidth();
+        float w = weight / 2.0;
 
-    //     OutlineSegment segment = segments[i];
-    //     std::vector<glm::vec2> anchors = segment.getAnchors();
-    //     float weight = pen.getWidth();
-    //     float w = weight / 2.0;
+        int j = i + 1;
+        if (i == n-1) {
+            j = 0;
+        }
 
-    //     // Segment with 3 points, point[1] is a cusp point
-    //     if (anchors.size() == 3) {
-    //         glm::vec2 normal = orthogonal(anchors[0], anchors[1], CounterClockwise);
-    //         glm::vec2 p0 = anchors[0] + (normal * (w));
-    //         glm::vec2 p1 = anchors[0] - (normal * (w));
-    //         pushPoints(vertices, p0);
-    //         pushPoints(vertices, p1);
+        if (points[i].isCuspPoint()) {
+            if (i == n - 1){
+                int k = i - 1;
+                glm::vec2 pk = points[k].getPosition();
+                glm::vec2 pi = points[i].getPosition();
+                glm::vec2 normal = orthogonal(pk, pi, CounterClockwise);
+                glm::vec2 p0 = pi + (normal * (w));
+                glm::vec2 p1 = pi - (normal * (w));
+                vertices.push_back(p0);
+                vertices.push_back(p1);
 
-    //         p0 = anchors[1] + (normal * (w));
-    //         p1 = anchors[1] - (normal * (w));
-    //         pushPoints(vertices, p0);
-    //         pushPoints(vertices, p1);
+                if (outline.isClosedPath()) {
+                    k = 1;
+                    pi = points[i].getPosition();
+                    pk = points[k].getPosition();
+                    glm::vec2 normal = orthogonal(pi, pk, CounterClockwise);
+                    glm::vec2 p0 = pi + (normal * (w));
+                    glm::vec2 p1 = pi - (normal * (w));
+                    vertices.push_back(p0);
+                    vertices.push_back(p1);
+                }
 
-    //         normal = orthogonal(anchors[1], anchors[2], CounterClockwise);
-    //         p0 = anchors[1] + (normal * (w));
-    //         p1 = anchors[1] - (normal * (w));
-    //         pushPoints(vertices, p0);
-    //         pushPoints(vertices, p1);
+            }
+            else {
+                int k = i - 1;
+                glm::vec2 pk = points[k].getPosition();
+                glm::vec2 pi = points[i].getPosition();
+                glm::vec2 normal = orthogonal(pk, pi, CounterClockwise);
+                glm::vec2 p0 = pi + (normal * (w));
+                glm::vec2 p1 = pi - (normal * (w));
+                vertices.push_back(p0);
+                vertices.push_back(p1);
 
-    //         p0 = anchors[2] + (normal * (w));
-    //         p1 = anchors[2] - (normal * (w));
-    //         pushPoints(vertices, p0);
-    //         pushPoints(vertices, p1);
-    //     }
-    //     // Segment with 2 points
-    //     else if (anchors.size() == 2) {
-    //         if (!segment.containCusp()) {
-    //             glm::vec2 normal = orthogonal(anchors[0], anchors[1], CounterClockwise);
-    //             glm::vec2 p0 = anchors[0] + (normal * (w));
-    //             glm::vec2 p1 = anchors[0] - (normal * (w));
-    //             pushPoints(vertices, p0);
-    //             pushPoints(vertices, p1);
+                k = i + 1;
+                pi = points[i].getPosition();
+                pk = points[k].getPosition();
+                normal = orthogonal(pi, pk, CounterClockwise);
+                p0 = pi + (normal * (w));
+                p1 = pi - (normal * (w));
+                vertices.push_back(p0);
+                vertices.push_back(p1);
+            }
+        }
+        else {
+            glm::vec2 pi = points[i].getPosition();
+            glm::vec2 pj = points[j].getPosition();
+            glm::vec2 normal = orthogonal(pi,pj, CounterClockwise);
+            glm::vec2 p0 = pi + (normal * (w));
+            glm::vec2 p1 = pi - (normal * (w));
+            vertices.push_back(p0);
+            vertices.push_back(p1);
+        }
 
-    //             p0 = anchors[1] + (normal * (w));
-    //             p1 = anchors[1] - (normal * (w));
-    //             pushPoints(vertices, p0);
-    //             pushPoints(vertices, p1);
 
-    //         }
-    //         else {
-    //             // with cusp point
-    //             // if (i < segments.size() -1) {
-    //                 glm::vec2 normal = orthogonal(anchors[0], anchors[1], CounterClockwise);
-    //                 glm::vec2 p0 = anchors[0] + (normal * (w));
-    //                 glm::vec2 p1 = anchors[0] - (normal * (w));
-    //                 pushPoints(vertices, p0);
-    //                 pushPoints(vertices, p1);
-
-    //                 p0 = anchors[1] + (normal * (w));
-    //                 p1 = anchors[1] - (normal * (w));
-    //                 pushPoints(vertices, p0);
-    //                 pushPoints(vertices, p1);
-
-    //             // }
-    //         }
-    //     }
-    //     else {
-    //         // should never got here
-    //     }
-    // }
+    }
 
     return vertices;
 }

@@ -1,10 +1,12 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QDir>
+#include <QQmlDebuggingEnabler>
 
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+
 
     QString appDir = QCoreApplication::applicationDirPath();
     QDir::setCurrent(QDir(appDir).filePath(".."));

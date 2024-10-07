@@ -19,11 +19,14 @@ public:
 
 private:
     int createBuffer0();
-    int createShaderResourceBinding0();
     int createBuffer1();
+    int createBuffer2();
+    int createShaderResourceBinding0();
     int createShaderResourceBinding1();
+    int createShaderResourceBinding2();
     int createPipline0();
     int createPipline1();
+    int createPipline2();
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;
@@ -41,6 +44,13 @@ private:
     std::unique_ptr<QRhiBuffer> _uniformBuffer1;
     std::unique_ptr<QRhiBuffer> _vectexBuffer1;
     std::unique_ptr<QRhiBuffer> _modelBuffer1;
+
+
+    std::unique_ptr<QRhiGraphicsPipeline> _pipeline2;
+    std::unique_ptr<QRhiShaderResourceBindings> _srb2;
+    std::unique_ptr<QRhiBuffer> _uniformBuffer2;
+    std::unique_ptr<QRhiBuffer> _vectexBuffer2;
+    std::unique_ptr<QRhiBuffer> _modelBuffer2;
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;

@@ -48,6 +48,7 @@ public:
     void setPen(Pen& pen);
     std::vector<glm::vec3>& getBorderVertices();
     std::vector<glm::vec3>& getShapeVertices();
+    std::vector<glm::vec3>& getBorderGuideLineVertices();
 
     void draw() override;
 
@@ -61,6 +62,7 @@ protected:
     Pen _pen;
     Outline _outline;
     std::vector<glm::vec3> _borderVertices;
+    std::vector<glm::vec3> _borderGuideLineVertices;
     std::vector<glm::vec3> _shapeVertices;
 
     glm::mat4 _rotateMatrix;

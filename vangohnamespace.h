@@ -37,9 +37,10 @@ enum VertexType {
     BorderVertex,
 };
 
-const float borderVerticesZWeight = 0.0;
-const float shapeVerticesZWeight = -0.5;
-const float outlineSegmentPrecision = 1;
+const float borderGuideLineVerticesZWeight = 0.2;
+const float borderVerticesZWeight = 0.1;
+const float shapeVerticesZWeight = 0.0;
+const float outlinePrecision = 1.0;
 const float defaultPenWidth = 1;
 
 }
