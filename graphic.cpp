@@ -186,13 +186,9 @@ void Polygon::createOutline()
     float tail = 0.0;
     float step = 0.0;
 
-    for (int i = 0; i < n; i ++) {
+    for (int i = 0; i < n-1; i ++) {
 
         int j = i + 1;
-
-        if (i == n-1) {
-            j = 0;
-        }
 
         glm::vec2& p0 = points2D[i];
         glm::vec2& p1 = points2D[j];

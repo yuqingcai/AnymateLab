@@ -616,7 +616,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
             { _modelBuffer2.get(), i * sizeof(glm::mat4) }
         };
         cb->setVertexInput(0, 2, inputBindings);
-        cb->draw(vertices.size());
+        // cb->draw(vertices.size());
         offset += vertices.size() * sizeof(glm::vec3);
     }
     //
@@ -738,14 +738,26 @@ Curve::Curve()
     // _shapes.push_back(polygon0);
 
     Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
+        // glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(0.0, 5.0, 0.0),
+        // glm::vec3(2.5, 7.5, 0.0),
+        // glm::vec3(5.0, 5.0, 0.0),
+        // glm::vec3(5.0, 0.0, 0.0),
+        // glm::vec3(2.5, 2.5, 0.0),
+        // glm::vec3(0.0, 0.0, 0.0),
+
         glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(0.0, 10.0, 0.0),
-        glm::vec3(10.0, 10.0, 0.0),
-        glm::vec3(10.0, 0.0, 0.0),
+        glm::vec3(0.0, 50.0, 0.0),
+        glm::vec3(25, 75, 0.0),
+        glm::vec3(50, 50, 0.0),
+        glm::vec3(50, 0.0, 0.0),
+        glm::vec3(25, 25, 0.0),
+        glm::vec3(0.0, 0.0, 0.0),
+
     });
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 10);
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 10);
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 10);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 2);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 2);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 2);
     Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
     polygon1->setPen(pen1);
     polygon1->draw();

@@ -15,10 +15,9 @@ public:
     std::vector<glm::vec2> guideLines(Pen& pen, Outline& outline);
 
 private:
-
-
-    std::vector<glm::vec2> createOutlineSegment(
-        Outline& outline, int from, int to, float weight, JoinStyle joinStyle);
+    std::vector<glm::vec2> createOutlineFrames(
+        Outline& outline, int from, int to, float weight,
+        JoinStyle joinStyle);
 
 };
 }
