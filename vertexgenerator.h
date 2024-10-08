@@ -15,8 +15,8 @@ public:
     std::vector<glm::vec2> guideLines(Pen& pen, Outline& outline);
 
 private:
-    std::vector<glm::vec2> createOutlineFrames(
-        Outline& outline, int from, int to, float weight,
+    std::vector<glm::vec2> createOutlineFrame(
+        Outline& outline, int i, float weight,
         JoinStyle joinStyle);
 
 };
