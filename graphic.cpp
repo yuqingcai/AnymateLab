@@ -149,6 +149,11 @@ Polygon::Polygon(std::initializer_list<glm::vec3> list)
         _points.push_back(p);
     }
 
+    // make sure polygon is closed
+    if (_points.back() != _points.front()) {
+        _points.push_back(_points.front());
+    }
+
 }
 
 Polygon::Polygon(std::vector<glm::vec3> list)
@@ -158,6 +163,11 @@ Polygon::Polygon(std::vector<glm::vec3> list)
 
     for (glm::vec3 p : list) {
         _points.push_back(p);
+    }
+
+    // make sure polygon is closed
+    if (_points.back() != _points.front()) {
+        _points.push_back(_points.front());
     }
 }
 
@@ -304,6 +314,48 @@ void Polygon::createShapeVertices()
         _shapeVertices.push_back(_points[k]);
         _shapeVertices.push_back(center);
     }
+}
+
+Line::Line(glm::vec3 p0, glm::vec3 p1)
+    :
+    _point0(p0),
+    _point1(p1)
+{
+
+}
+
+Line::~Line()
+{
+
+}
+
+void Line::createOutline()
+{
+    _outline.reset();
+
+    float step = Vangoh::outlinePrecision;
+
+    // outline just need 2D points;
+    glm::vec2 p0 = glm::vec2(_point0.x, _point0.y);
+    glm::vec2 p1 = glm::vec2(_point1.x, _point1.y);
+    float distance = glm::distance(p0, p1);
+    glm::vec2 p = p0;
+
+    _outline.appendPosition(p0);
+
+    while (true) {
+        p = pointRelateTo(p, p1, step);
+        float distanceP = glm::distance(p0, p);
+        if (distanceP < distance) {
+            _outline.appendPosition(p);
+        }
+        else if (fabs(distanceP - distance) < FLT_EPSILON ||
+                distanceP > distance) {
+            _outline.appendPosition(p1);
+            break;
+        }
+    }
+
 }
 
 

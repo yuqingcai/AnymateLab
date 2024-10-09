@@ -616,7 +616,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
             { _modelBuffer2.get(), i * sizeof(glm::mat4) }
         };
         cb->setVertexInput(0, 2, inputBindings);
-        // cb->draw(vertices.size());
+        cb->draw(vertices.size());
         offset += vertices.size() * sizeof(glm::vec3);
     }
     //
@@ -738,21 +738,20 @@ Curve::Curve()
     // _shapes.push_back(polygon0);
 
     Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
-        // glm::vec3(0.0, 0.0, 0.0),
-        // glm::vec3(0.0, 5.0, 0.0),
-        // glm::vec3(2.5, 7.5, 0.0),
-        // glm::vec3(5.0, 5.0, 0.0),
-        // glm::vec3(5.0, 0.0, 0.0),
-        // glm::vec3(2.5, 2.5, 0.0),
-        // glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 5.0, 0.0),
+        glm::vec3(2.5, 7.5, 0.0),
+        glm::vec3(5.0, 5.0, 0.0),
+        glm::vec3(5.0, 0.0, 0.0),
+        glm::vec3(2.5, 2.5, 0.0),
 
-        glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(0.0, 50.0, 0.0),
-        glm::vec3(25, 75, 0.0),
-        glm::vec3(50, 50, 0.0),
-        glm::vec3(50, 0.0, 0.0),
-        glm::vec3(25, 25, 0.0),
-        glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(0.0, 0.0, 0.0),
+        // glm::vec3(0.0, 50.0, 0.0),
+        // glm::vec3(25, 75, 0.0),
+        // glm::vec3(50, 50, 0.0),
+        // glm::vec3(50, 0.0, 0.0),
+        // glm::vec3(25, 25, 0.0),
+        // glm::vec3(0.0, 0.0, 0.0),
 
     });
     // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 2);
@@ -762,6 +761,22 @@ Curve::Curve()
     polygon1->setPen(pen1);
     polygon1->draw();
     _shapes.push_back(polygon1);
+
+    Vangoh::Line* line1 = new Vangoh::Line(
+        glm::vec3(0.0, 10.0, 0.0),
+        glm::vec3(10.0, 10.0, 0.0));
+    Vangoh::Pen line1pen(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
+    line1->setPen(line1pen);
+    line1->draw();
+    _shapes.push_back(line1);
+
+    Vangoh::Line* line2 = new Vangoh::Line(
+        glm::vec3(0.0, -10.0, 0.0),
+        glm::vec3(-10.0, -10.0, 0.0));
+    Vangoh::Pen line2pen(Vangoh::SolidLine, Vangoh::SquareCap, Vangoh::RoundJoin, 2);
+    line2->setPen(line2pen);
+    line2->draw();
+    _shapes.push_back(line2);
 
 }
 

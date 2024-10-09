@@ -91,6 +91,20 @@ protected:
 };
 
 
+class Line: public GeometryShape
+{
+public:
+    Line(glm::vec3 p0, glm::vec3 p1);
+    virtual ~ Line();
+
+protected:
+    void createOutline() override;
+
+    glm::vec3 _point0;
+    glm::vec3 _point1;
+};
+
+
 
 }
 
