@@ -1,5 +1,6 @@
 #include "vertexgenerator.h"
 #include "tools.h"
+#include <stdio.h>
 
 namespace Vangoh {
 

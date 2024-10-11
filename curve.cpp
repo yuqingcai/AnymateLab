@@ -447,7 +447,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     size_t offset = 0;
 
     glm::vec4 borderColor = glm::vec4(1.0, 0.0, 0.0, 1.0);
-    glm::vec4 guideLineColor = glm::vec4(0.0, 1.0, 0.0, 1.0);
+    glm::vec4 guideLineColor = glm::vec4(1.0, 1.0, 1.0, 1.0);
     glm::vec4 fillColor = glm::vec4(1.0, 1.0, 0.0, 1.0);
 
     offset = align(0, STD140_ALIGN_MAT4);
