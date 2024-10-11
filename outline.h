@@ -10,16 +10,16 @@ namespace Vangoh {
 class OutlinePoint
 {
 public:
-    OutlinePoint(glm::vec2& position);
+    OutlinePoint(glm::vec3& position);
     virtual ~OutlinePoint();
     bool isCuspPoint();
     void setCuspPoint(bool flag);
     bool isBreakPoint();
     void setBreakPoint(bool flag);
-    glm::vec2& getPosition();
+    glm::vec3& getPosition();
 
 protected:
-    glm::vec2 _position;
+    glm::vec3 _position;
     bool _isCuspPoint;
     bool _isBreakPoint;
 
@@ -31,7 +31,7 @@ public:
     Outline();
     virtual ~ Outline();
     void reset();
-    void appendPosition(glm::vec2& position);
+    void appendPosition(glm::vec3& position);
     std::vector<OutlinePoint>& getPoints();
     bool isClosedPath();
     void print();

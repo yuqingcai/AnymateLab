@@ -24,7 +24,7 @@ glm::vec3 pointRelateTo(const glm::vec3& p0, const glm::vec3& p1,
     return p0 + (n * distance);
 }
 
-glm::vec2 orthogonal(const glm::vec2& p0, const glm::vec2& p1)
+glm::vec2 orthogonalXY(const glm::vec2& p0, const glm::vec2& p1)
 {
     glm::vec2 n = glm::normalize(p1 - p0);
     return glm::vec2(-n.y, n.x);
@@ -33,12 +33,30 @@ glm::vec2 orthogonal(const glm::vec2& p0, const glm::vec2& p1)
 glm::vec3 orthogonalXY(const glm::vec3& p0, const glm::vec3& p1)
 {
     glm::vec3 n = glm::normalize(p1 - p0);
+
+    // p1, p0 on Z axis
+    if (fabs(n.y) < FLT_EPSILON && fabs(n.x) < FLT_EPSILON) {
+        if (n.z >= 0.0)
+            return glm::normalize(glm::vec3(0.0, -1.0, 0.0));
+        else
+            return glm::normalize(glm::vec3(0.0, 1.0, 0.0));
+    }
+
     return glm::vec3(-n.y, n.x, 0.0);
 }
 
 glm::vec3 orthogonalXZ(const glm::vec3& p0, const glm::vec3& p1)
 {
     glm::vec3 n = glm::normalize(p1 - p0);
+
+    // p1, p0 on Y axis
+    if (fabs(n.z) < FLT_EPSILON && fabs(n.x) < FLT_EPSILON) {
+        if (n.y >= 0)
+            return glm::normalize(glm::vec3(0.0, 0.0, -1.0));
+        else
+            return glm::normalize(glm::vec3(0.0, 0.0, 1.0));
+    }
+
     return glm::vec3(-n.z, 0.0, n.x);
 }
 

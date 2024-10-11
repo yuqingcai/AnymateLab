@@ -82,9 +82,6 @@ public:
 protected:
     void createShapeVertices() override;
     void createOutline() override;
-    virtual glm::vec3 normal();
-    virtual glm::vec3 center();
-
     std::vector<glm::vec3> _points;
 
 };

@@ -102,19 +102,16 @@ void Shape::createOutlineVertices()
     createOutline();
     // _outline.print();
 
-    std::vector<glm::vec2> vertices;
+    std::vector<glm::vec3> vertices;
 
-    vertices = _vertexGenerator.createOutlineFrames(_pen, _outline);
+    vertices = _vertexGenerator.createOutlineMeshes(_pen, _outline);
     _outlineVertices.clear();
-    for (glm::vec2 p : vertices) {
-        _outlineVertices.push_back(glm::vec3(p.x, p.y, borderVerticesZWeight));
-    }
+    _outlineVertices.insert(_outlineVertices.end(), vertices.begin(), vertices.end());
 
     vertices = _vertexGenerator.createOutlineGuideLines(_pen, _outline);
     _guideLineVertices.clear();
-    for (glm::vec2 p : vertices) {
-        _guideLineVertices.push_back(glm::vec3(p.x, p.y, borderGuideLineVerticesZWeight));
-    }
+    _guideLineVertices.insert(_guideLineVertices.end(), vertices.begin(), vertices.end());
+
 }
 
 void Shape::createShapeVertices()
@@ -174,10 +171,6 @@ void Polygon::createOutline()
     _outline.reset();
 
     // outline just need 2D points;
-    std::vector<glm::vec2> points2D;
-    for (glm::vec3 p : _points) {
-        points2D.push_back(glm::vec2(p.x, p.y));
-    }
 
     float tail = 0.0;
     float step = 0.0;
@@ -185,10 +178,10 @@ void Polygon::createOutline()
 
         int j = i + 1;
 
-        glm::vec2& p0 = points2D[i];
-        glm::vec2& p1 = points2D[j];
+        glm::vec3& p0 = _points[i];
+        glm::vec3& p1 = _points[j];
         float distance = glm::distance(p0, p1);
-        glm::vec2 p;
+        glm::vec3 p;
 
         if (!_outline.getPoints().size() ||
             _outline.getPoints().back().getPosition() != p0){
@@ -247,17 +240,6 @@ void Polygon::createOutline()
 
 }
 
-glm::vec3 Polygon::center()
-{
-    float x = 0.0, y = 0.0, z = 0.0;
-    int n = _points.size();
-    for (int i = 0; i < n; i ++) {
-        x += _points[i].x;
-        y += _points[i].y;
-        z += _points[i].z;
-    }
-    return glm::vec3(x/n, y/n, z/n);
-}
 
 void Polygon::createShapeVertices()
 {
@@ -267,41 +249,6 @@ void Polygon::createShapeVertices()
     }
 }
 
-glm::vec3 Polygon::normal()
-{
-    assert(_points.size() >= 3);
-
-    if (_points.size() < 3) {
-        fprintf(stderr, "Polygon should at least contains 3 points\n");
-    }
-
-    int n = _points.size();
-    glm::vec3 p0 = _points[0];
-    glm::vec3 p1 = _points[1];
-    float epsilon = 1e-6f;
-    glm::vec3 p2;
-    bool found = false;
-
-    // find the point that are not collinear
-    int i = 2;
-    while (i < n) {
-        p2 = _points[i];
-        glm::vec3 AB = p1 - p0;
-        glm::vec3 AC = p2 - p0;
-        if (glm::length(glm::cross(AB, AC)) > epsilon) {
-            found = true;
-            break;
-        }
-        i ++;
-    }
-
-    if (found) {
-        return glm::normalize(glm::cross(p1 - p0, p2 - p0));
-    }
-
-    fprintf(stderr, "Polygon should at least contains 3 points that are not collinear\n");
-    return glm::vec3(0.0, 0.0, 0.0);
-}
 
 
 Line::Line(glm::vec3 p0, glm::vec3 p1)
@@ -324,10 +271,10 @@ void Line::createOutline()
     float step = Vangoh::outlinePrecision;
 
     // outline just need 2D points;
-    glm::vec2 p0 = glm::vec2(_endPoint0.x, _endPoint0.y);
-    glm::vec2 p1 = glm::vec2(_endPoint1.x, _endPoint1.y);
+    glm::vec3 p0 = _endPoint0;
+    glm::vec3 p1 = _endPoint1;
     float distance = glm::distance(p0, p1);
-    glm::vec2 p = p0;
+    glm::vec3 p = p0;
 
     _outline.appendPosition(p0);
 

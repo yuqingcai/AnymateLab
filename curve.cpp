@@ -447,7 +447,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     size_t offset = 0;
 
     glm::vec4 borderColor = glm::vec4(1.0, 0.0, 0.0, 1.0);
-    glm::vec4 borderGuideLineColor = glm::vec4(0.0, 1.0, 0.0, 1.0);
+    glm::vec4 guideLineColor = glm::vec4(0.0, 1.0, 0.0, 1.0);
     glm::vec4 fillColor = glm::vec4(1.0, 1.0, 0.0, 1.0);
 
     offset = align(0, STD140_ALIGN_MAT4);
@@ -502,10 +502,10 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     batch->updateDynamicBuffer(_uniformBuffer2.get(),
                                offset,
                                sizeof(glm::vec4),
-                               &borderGuideLineColor);
+                               &guideLineColor);
 
 
-    // update border VBO
+    // update outline VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
         std::vector<glm::vec3>& vertices = _shapes[i]->getOutlineVertices();
@@ -515,13 +515,10 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
         // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 1.0f));
-        // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
+        model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
-        batch->uploadStaticBuffer(_modelBuffer0.get(),
-                                  i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4),
-                                  &model);
+        batch->uploadStaticBuffer(_modelBuffer0.get(), i * sizeof(glm::mat4), sizeof(glm::mat4), &model);
     }
 
     // update shape VBO
@@ -535,16 +532,13 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
         // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        // model = glm::rotate(model, qDegreesToRadians(_angle),glm::vec3(0.0f, 1.0f, 1.0f));
-        // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
+        model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
-        batch->uploadStaticBuffer(_modelBuffer1.get(),
-                                  i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4),
-                                  &model);
+        batch->uploadStaticBuffer(_modelBuffer1.get(), i * sizeof(glm::mat4), sizeof(glm::mat4), &model);
     }
 
-    // update border guide line VBO
+    // update outline guide line VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
         std::vector<glm::vec3>& vertices = _shapes[i]->getGuideLineVertices();
@@ -554,13 +548,10 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
 
         // model vertices
         glm::mat4 model = glm::mat4(1.0f);
-        // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 1.0f));
-        // model = glm::scale(model, glm::vec3(_scale, _scale, 0.0));
+        model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
         model = glm::translate(model,glm::vec3(0.0f, 0.0f, 0.0f));
-        batch->uploadStaticBuffer(_modelBuffer2.get(),
-                                  i * sizeof(glm::mat4),
-                                  sizeof(glm::mat4),
-                                  &model);
+        batch->uploadStaticBuffer(_modelBuffer2.get(), i * sizeof(glm::mat4), sizeof(glm::mat4), &model);
     }
 
     cb->resourceUpdate(batch);
@@ -605,13 +596,17 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
-    // draw border guide line
+    // draw outline guide line
     //
     cb->setGraphicsPipeline(_pipeline2.get());
     cb->setShaderResources(_srb2.get());
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
         std::vector<glm::vec3>& vertices = _shapes[i]->getGuideLineVertices();
+        // for (int i = 0; i < vertices.size(); i ++) {
+        //     printf("%0.1f ", vertices[i].z);
+        // }
+
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer2.get(), offset },
             { _modelBuffer2.get(), i * sizeof(glm::mat4) }
@@ -653,7 +648,6 @@ Curve::Curve()
 
     Vangoh::Pen pen(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
 
-
     Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
         glm::vec3(0.0, 0.0, 0.0),
         glm::vec3(100.0, 0.0, 0.0),
@@ -665,31 +659,66 @@ Curve::Curve()
     _shapes.push_back(polygon1);
 
 
-    // Vangoh::Polygon* polygon2 = new Vangoh::Polygon({
-    //     glm::vec3(0.0, 0.0, 0.0),
-    //     glm::vec3(0.0, 100.0, 0.0),
-    //     glm::vec3(-100, 100, 0.0),
-    //     glm::vec3(-100, 0.0, 0.0),
-    // });
-    // polygon2->setPen(pen);
-    // polygon2->draw();
-    // _shapes.push_back(polygon2);
+    Vangoh::Polygon* polygon2 = new Vangoh::Polygon({
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 100.0, 0.0),
+        glm::vec3(-100, 100, 0.0),
+        glm::vec3(-100, 0.0, 0.0),
+    });
+    polygon2->setPen(pen);
+    polygon2->draw();
+    _shapes.push_back(polygon2);
 
-    // Vangoh::Line* line1 = new Vangoh::Line(
-    //     glm::vec3(0.0, -20.0, 0.0),
-    //     glm::vec3(100.0, -40.0, 0.0));
-    // Vangoh::Pen line1pen(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
-    // line1->setPen(line1pen);
-    // line1->draw();
-    // _shapes.push_back(line1);
+    // line1 on X asix
+    Vangoh::Line* line1 = new Vangoh::Line(
+        glm::vec3(10.0, 0.0, 0.0),
+        glm::vec3(40.0, 0.0, 0.0));
+    line1->setPen(pen);
+    line1->draw();
+    _shapes.push_back(line1);
 
-    // Vangoh::Line* line2 = new Vangoh::Line(
-    //     glm::vec3(0.0, -40.0, 0.0),
-    //     glm::vec3(-100.0, -40.0, 0.0));
-    // Vangoh::Pen line2pen(Vangoh::SolidLine, Vangoh::SquareCap, Vangoh::RoundJoin, 2);
-    // line2->setPen(line2pen);
-    // line2->draw();
-    // _shapes.push_back(line2);
+    // line2 on X asix
+    Vangoh::Line* line2 = new Vangoh::Line(
+        glm::vec3(20.0, 10.0, 0.0),
+        glm::vec3(-40.0, 10.0, 0.0));
+    line2->setPen(pen);
+    line2->draw();
+    _shapes.push_back(line2);
+
+
+    // line3 on Y asix
+    Vangoh::Line* line3 = new Vangoh::Line(
+        glm::vec3(60.0, 0.0, 0.0),
+        glm::vec3(60.0, 40.0, 0.0));
+    line3->setPen(pen);
+    line3->draw();
+    _shapes.push_back(line3);
+
+    // line4 on Y asix
+    Vangoh::Line* line4 = new Vangoh::Line(
+        glm::vec3(80.0, 0.0, 0.0),
+        glm::vec3(80.0, -40.0, 0.0));
+    line4->setPen(pen);
+    line4->draw();
+    _shapes.push_back(line4);
+
+
+    // line5 on Z asix
+    Vangoh::Line* line5 = new Vangoh::Line(
+        glm::vec3(100.0, 0.0, 0.0),
+        glm::vec3(100.0, 0.0, 40.0));
+    line5->setPen(pen);
+    line5->draw();
+    _shapes.push_back(line5);
+
+    // line6 on Z asix
+    Vangoh::Line* line6 = new Vangoh::Line(
+        glm::vec3(120.0, 0.0, 0.0),
+        glm::vec3(120.0, 0.0, -40.0));
+    line6->setPen(pen);
+    line6->draw();
+    _shapes.push_back(line6);
+
 
 }
 

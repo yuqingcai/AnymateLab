@@ -167,7 +167,7 @@ ApplicationWindow {
                 NumberAnimation on angle {
                     from: 0
                     to: 360
-                    duration: 6000
+                    duration: 12000
                     loops: Animation.Infinite
                     running:true
                 }

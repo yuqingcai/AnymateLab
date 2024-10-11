@@ -17,4 +17,5 @@ void main(void)
 {
     mat4 model = mat4(modelColumn0, modelColumn1, modelColumn2, modelColumn3);
     gl_Position = projection * view * model * position;
+
 }
