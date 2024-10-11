@@ -31,11 +31,11 @@ ApplicationWindow {
             color: "lightgray"
         }
 
-        Button {
-            id: renderButton
-            text: "Render to Texture"
-            anchors.centerIn: parent
-        }
+        // Button {
+        //     id: renderButton
+        //     text: "Render to Texture"
+        //     anchors.centerIn: parent
+        // }
     }
 
 
@@ -180,9 +180,7 @@ ApplicationWindow {
                     loops: Animation.Infinite
                     running:true
                 }
-
             }
-
 
             // Stage {
             //     SplitView.fillWidth: true
@@ -190,7 +188,7 @@ ApplicationWindow {
             // }
 
             Rectangle {
-                SplitView.preferredHeight: 200
+                SplitView.preferredHeight: 0
                 color: Qt.rgba(1, 1, 1, 0.0)
             }
         }

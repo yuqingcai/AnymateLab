@@ -6,6 +6,7 @@
 #include <QtMath>
 #include <QPainter>
 #include <graphic.h>
+#include "tools.h"
 
 #define STD140_ALIGN_INT   4
 #define STD140_ALIGN_FLOAT 4
@@ -507,7 +508,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     // update border VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices = _shapes[i]->getBorderVertices();
+        std::vector<glm::vec3>& vertices = _shapes[i]->getOutlineVertices();
         qint32 size = vertices.size() * sizeof(glm::vec3);
         batch->uploadStaticBuffer(_vectexBuffer0.get(), offset, size, vertices.data());
         offset += size;
@@ -546,7 +547,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     // update border guide line VBO
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices = _shapes[i]->getBorderGuideLineVertices();
+        std::vector<glm::vec3>& vertices = _shapes[i]->getGuideLineVertices();
         qint32 size = vertices.size() * sizeof(glm::vec3);
         batch->uploadStaticBuffer(_vectexBuffer2.get(), offset, size, vertices.data());
         offset += size;
@@ -570,7 +571,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     cb->setShaderResources(_srb0.get());
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices = _shapes[i]->getBorderVertices();
+        std::vector<glm::vec3>& vertices = _shapes[i]->getOutlineVertices();
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer0.get(), offset },
             { _modelBuffer0.get(), i * sizeof(glm::mat4) }
@@ -610,7 +611,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
     cb->setShaderResources(_srb2.get());
     offset = 0;
     for (int i = 0; i < _shapes.size(); i ++) {
-        std::vector<glm::vec3>& vertices = _shapes[i]->getBorderGuideLineVertices();
+        std::vector<glm::vec3>& vertices = _shapes[i]->getGuideLineVertices();
         const QRhiCommandBuffer::VertexInput inputBindings[] = {
             { _vectexBuffer2.get(), offset },
             { _modelBuffer2.get(), i * sizeof(glm::mat4) }
@@ -619,7 +620,7 @@ void CurveRenderer::render(QRhiCommandBuffer *cb)
         cb->draw(vertices.size());
         offset += vertices.size() * sizeof(glm::vec3);
     }
-    //
+
     ///////////////////////////////////////////////////////////////////////////
 
     cb->endPass();
@@ -650,133 +651,45 @@ Curve::Curve()
     setAcceptedMouseButtons(Qt::LeftButton);
     setFlag(ItemAcceptsInputMethod, true);
 
-    // Anymate::RoundedRect* rect0 = new Anymate::RoundedRect(0.0, 0.0,
-    //                                                        100.0, 100.0,
-    //                                                        0.0, 0.0,
-    //                                                        0.0, 0.0);
-    // rect0->setBorderWidth(4.0);
-    // rect0->createVertices();
-    // _shapes.push_back(rect0);
+    Vangoh::Pen pen(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
 
-    // Anymate::Oval* oval = new Anymate::Oval(0.0, 0.0, 80.0, 60.0);
-    // oval->setBorderWidth(1.0);
-    // oval->createVertices();
-    // _shapes.push_back(oval);
-
-    // Anymate::Rect* rect1 = new Anymate::Rect(0.0, 0.0, 20.6, 30.05);
-    // rect1->setBorderWidth(1.0);
-    // rect1->createVertices();
-    // _shapes.push_back(rect1);
-
-    // Anymate::Bezier* curve = new Anymate::Bezier({
-    //     glm::vec2( -100.0, -100.0),
-    //     glm::vec2(   0.0, -100.0),
-    //     glm::vec2(   0.0,  100.0),
-    //     glm::vec2( 100.0, 100.0)
-    // });
-    // curve->generateVertices();
-    // _shapes.push_back(curve);
-
-
-
-
-    // const int numVertices = 10;
-    // // 外部半径和内部半径
-    // float r_outer = 100.0f;
-    // float r_inner = 50.0f;
-
-    // // 角度步长
-    // float angleStep = glm::radians(360.0f / 5.0f); // 每个顶点之间的角度为72度
-
-    // // 用于存储五角星顶点的坐标
-    // std::vector<glm::vec3> starVertices;
-
-    // for (int i = 0; i < numVertices; ++i) {
-    //     // 根据顶点是外部还是内部选择半径
-    //     float radius = (i % 2 == 0) ? r_outer : r_inner;
-
-    //     // 计算当前顶点的角度
-    //     float angle = i * angleStep;
-
-    //     // 计算顶点坐标 (极坐标转换为直角坐标)
-    //     float x = radius * cos(angle);
-    //     float y = radius * sin(angle);
-
-    //     // 将顶点添加到列表
-    //     starVertices.push_back(glm::vec3(x, y, 0.0));
-    // }
-
-    // Anymate::Polygon* polygon = new Anymate::Polygon(starVertices);
-
-    // Vangoh::Polygon* polygon0 = new Vangoh::Polygon({
-
-        // glm::vec3(0.0, 0.0, 0.0),
-        // glm::vec3(100.0, 100.0, 0.0),
-        // glm::vec3(200.0, 100.0, 0.0),
-        // glm::vec3(300.0, 0.0, 0.0),
-        // glm::vec3(200.0, -100.0, 0.0),
-        // glm::vec3(100.0, -100.0, 0.0),
-
-        // glm::vec3(0.0, 0.0, 0.0),
-        // glm::vec3(100.0, -50.0, 0.0),
-        // glm::vec3(200.0, 0.0, 0.0),
-        // glm::vec3(100.0, 100.0, 0.0),
-
-        // glm::vec3(0.0, 0.0, 0.0),
-        // glm::vec3(100.0, 100.0, 0.0),
-        // glm::vec3(200.0, 0.0, 0.0),
-        // glm::vec3(100.0, 50.0, 0.0),
-    // });
-
-    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 10);
-    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 10);
-    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 10);
-    // Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 10);
-
-    // polygon0->setPen(pen0);
-    // polygon0->draw();
-    // _shapes.push_back(polygon0);
 
     Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
         glm::vec3(0.0, 0.0, 0.0),
-        glm::vec3(0.0, 5.0, 0.0),
-        glm::vec3(2.5, 7.5, 0.0),
-        glm::vec3(5.0, 5.0, 0.0),
-        glm::vec3(5.0, 0.0, 0.0),
-        glm::vec3(2.5, 2.5, 0.0),
-
-        // glm::vec3(0.0, 0.0, 0.0),
-        // glm::vec3(0.0, 50.0, 0.0),
-        // glm::vec3(25, 75, 0.0),
-        // glm::vec3(50, 50, 0.0),
-        // glm::vec3(50, 0.0, 0.0),
-        // glm::vec3(25, 25, 0.0),
-        // glm::vec3(0.0, 0.0, 0.0),
-
+        glm::vec3(100.0, 0.0, 0.0),
+        glm::vec3(0, -100, 0.0),
+        glm::vec3(100, -100.0, 0.0),
     });
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::NoJoin, 2);
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::BevelJoin, 2);
-    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::MiterJoin, 2);
-    Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
-    polygon1->setPen(pen1);
+    polygon1->setPen(pen);
     polygon1->draw();
     _shapes.push_back(polygon1);
 
-    Vangoh::Line* line1 = new Vangoh::Line(
-        glm::vec3(0.0, 10.0, 0.0),
-        glm::vec3(10.0, 10.0, 0.0));
-    Vangoh::Pen line1pen(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
-    line1->setPen(line1pen);
-    line1->draw();
-    _shapes.push_back(line1);
 
-    Vangoh::Line* line2 = new Vangoh::Line(
-        glm::vec3(0.0, -10.0, 0.0),
-        glm::vec3(-10.0, -10.0, 0.0));
-    Vangoh::Pen line2pen(Vangoh::SolidLine, Vangoh::SquareCap, Vangoh::RoundJoin, 2);
-    line2->setPen(line2pen);
-    line2->draw();
-    _shapes.push_back(line2);
+    // Vangoh::Polygon* polygon2 = new Vangoh::Polygon({
+    //     glm::vec3(0.0, 0.0, 0.0),
+    //     glm::vec3(0.0, 100.0, 0.0),
+    //     glm::vec3(-100, 100, 0.0),
+    //     glm::vec3(-100, 0.0, 0.0),
+    // });
+    // polygon2->setPen(pen);
+    // polygon2->draw();
+    // _shapes.push_back(polygon2);
+
+    // Vangoh::Line* line1 = new Vangoh::Line(
+    //     glm::vec3(0.0, -20.0, 0.0),
+    //     glm::vec3(100.0, -40.0, 0.0));
+    // Vangoh::Pen line1pen(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
+    // line1->setPen(line1pen);
+    // line1->draw();
+    // _shapes.push_back(line1);
+
+    // Vangoh::Line* line2 = new Vangoh::Line(
+    //     glm::vec3(0.0, -40.0, 0.0),
+    //     glm::vec3(-100.0, -40.0, 0.0));
+    // Vangoh::Pen line2pen(Vangoh::SolidLine, Vangoh::SquareCap, Vangoh::RoundJoin, 2);
+    // line2->setPen(line2pen);
+    // line2->draw();
+    // _shapes.push_back(line2);
 
 }
 
@@ -788,7 +701,7 @@ Curve::~Curve()
     _shapes.clear();
 }
 
-std::vector<Vangoh::GeometryShape*>& Curve::getShapes()
+std::vector<Vangoh::Shape*>& Curve::getShapes()
 {
     return _shapes;
 }

@@ -3,7 +3,6 @@
 
 namespace Vangoh {
 
-
 OutlinePoint::OutlinePoint(glm::vec2& position):
     _position(position),
     _isCuspPoint(false),

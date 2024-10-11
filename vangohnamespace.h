@@ -1,7 +1,10 @@
 #ifndef VANGOHNAMESPACE_H
 #define VANGOHNAMESPACE_H
 
+#include <glm/glm.hpp>
+
 namespace Vangoh {
+
 
 enum PenStyle {
     NoPen,

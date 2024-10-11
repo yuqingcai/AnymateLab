@@ -3,23 +3,25 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <cassert>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Vangoh {
 
-Graphic::Graphic():
+Graphic::Graphic()
+    :
     _x(0.0),
     _y(0.0),
-    _width(0.0),
-    _height(0.0)
+    _z(0.0)
 {
 }
 
-Graphic::Graphic(float x, float y, float width, float height)
+Graphic::Graphic(float x, float y, float z)
+    :
+    _x(0.0),
+    _y(0.0),
+    _z(0.0)
 {
-    _x = x;
-    _y = y;
-    _width = width;
-    _height = height;
 }
 
 void Graphic::setX(float x)
@@ -32,16 +34,6 @@ void Graphic::setY(float y)
     _y = y;
 }
 
-void Graphic::setWidth(float width)
-{
-    _width = width;
-}
-
-void Graphic::setHeight(float height)
-{
-    _height = height;
-}
-
 float Graphic::getX()
 {
     return _x;
@@ -52,85 +44,80 @@ float Graphic::getY()
     return _y;
 }
 
-float Graphic::getWidth()
+float Graphic::getZ()
 {
-    return _width;
+    return _z;
 }
 
-float Graphic::getHeight()
-{
-    return _height;
-}
 
-GeometryShape::GeometryShape()
+Shape::Shape()
     :
-    Graphic(0.0, 0.0, 0.0, 0.0)
+    Graphic(0.0, 0.0, 0.00)
 {
 
 }
 
-GeometryShape::GeometryShape(float x, float y, float width, float height)
+Shape::Shape(float x, float y, float z)
     :
-    Graphic(x, y, width, height)
+    Graphic(x, y, z)
 {
 
 }
 
-GeometryShape::~ GeometryShape()
+Shape::~ Shape()
 {
+    _outlineVertices.clear();
+    _guideLineVertices.clear();
     _shapeVertices.clear();
-    _borderVertices.clear();
 }
 
-std::vector<glm::vec3>& GeometryShape::getBorderVertices()
+std::vector<glm::vec3>& Shape::getOutlineVertices()
 {
-    return _borderVertices;
+    return _outlineVertices;
 }
 
-std::vector<glm::vec3>& GeometryShape::getBorderGuideLineVertices()
+std::vector<glm::vec3>& Shape::getGuideLineVertices()
 {
-    return _borderGuideLineVertices;
+    return _guideLineVertices;
 }
 
-std::vector<glm::vec3>& GeometryShape::getShapeVertices()
+std::vector<glm::vec3>& Shape::getShapeVertices()
 {
     return _shapeVertices;
 }
 
-void GeometryShape::setPen(Pen& pen)
+void Shape::setPen(Pen& pen)
 {
     _pen = pen;
 }
 
-void GeometryShape::draw()
+void Shape::draw()
 {
-    createBorderVertices();
+    createOutlineVertices();
     createShapeVertices();
 }
 
-void GeometryShape::createBorderVertices()
+void Shape::createOutlineVertices()
 {
     createOutline();
-    _outline.print();
+    // _outline.print();
 
     std::vector<glm::vec2> vertices;
 
-    vertices = _vertexGenerator.generate(_pen, _outline);
-    _borderVertices.clear();
+    vertices = _vertexGenerator.createOutlineFrames(_pen, _outline);
+    _outlineVertices.clear();
     for (glm::vec2 p : vertices) {
-        _borderVertices.push_back(glm::vec3(p.x, p.y, borderVerticesZWeight));
+        _outlineVertices.push_back(glm::vec3(p.x, p.y, borderVerticesZWeight));
     }
 
-    vertices = _vertexGenerator.guideLines(_pen, _outline);
-    _borderGuideLineVertices.clear();
-
+    vertices = _vertexGenerator.createOutlineGuideLines(_pen, _outline);
+    _guideLineVertices.clear();
     for (glm::vec2 p : vertices) {
-        _borderGuideLineVertices.push_back(
-            glm::vec3(p.x, p.y, borderGuideLineVerticesZWeight));
+        _guideLineVertices.push_back(glm::vec3(p.x, p.y, borderGuideLineVerticesZWeight));
     }
 }
 
-void GeometryShape::createShapeVertices()
+void Shape::createShapeVertices()
 {
 
 }
@@ -153,7 +140,6 @@ Polygon::Polygon(std::initializer_list<glm::vec3> list)
     if (_points.back() != _points.front()) {
         _points.push_back(_points.front());
     }
-
 }
 
 Polygon::Polygon(std::vector<glm::vec3> list)
@@ -171,21 +157,21 @@ Polygon::Polygon(std::vector<glm::vec3> list)
     }
 }
 
-
 Polygon::~ Polygon()
 {
 
 }
 
-
 void Polygon::createOutline()
 {
-    _outline.reset();
-
+    assert(_points.size() >= 3);
     int n = _points.size();
-    if (n < 2) {
+    if (n < 3) {
+        fprintf(stderr, "Polygon should at least contains 3 points\n");
         return;
     }
+
+    _outline.reset();
 
     // outline just need 2D points;
     std::vector<glm::vec2> points2D;
@@ -195,7 +181,6 @@ void Polygon::createOutline()
 
     float tail = 0.0;
     float step = 0.0;
-
     for (int i = 0; i < n-1; i ++) {
 
         int j = i + 1;
@@ -262,31 +247,16 @@ void Polygon::createOutline()
 
 }
 
-glm::vec3 Polygon::getCenter()
+glm::vec3 Polygon::center()
 {
-    auto minXIt = std::min_element(_points.begin(), _points.end(),
-                                   [](const glm::vec3& a, const glm::vec3& b) {
-                                       return a.x < b.x;
-                                   });
-    auto maxXIt = std::min_element(_points.begin(), _points.end(),
-                                   [](const glm::vec3& a, const glm::vec3& b) {
-                                       return a.x > b.x;
-                                   });
-
-    auto minYIt = std::min_element(_points.begin(), _points.end(),
-                                   [](const glm::vec3& a, const glm::vec3& b) {
-                                       return a.y < b.y;
-                                   });
-    auto maxYIt = std::min_element(_points.begin(), _points.end(),
-                                   [](const glm::vec3& a, const glm::vec3& b) {
-                                       return a.y > b.y;
-                                   });
-    float x = (minXIt->x + maxXIt->x) / 2.0;
-    float y = (minYIt->y + maxYIt->y) / 2.0;
-    float z = shapeVerticesZWeight;
-
-    return glm::vec3(x, y, z);
-
+    float x = 0.0, y = 0.0, z = 0.0;
+    int n = _points.size();
+    for (int i = 0; i < n; i ++) {
+        x += _points[i].x;
+        y += _points[i].y;
+        z += _points[i].z;
+    }
+    return glm::vec3(x/n, y/n, z/n);
 }
 
 void Polygon::createShapeVertices()
@@ -295,31 +265,49 @@ void Polygon::createShapeVertices()
     if (_points.size() < 3) {
         return;
     }
-
-    glm::vec3 center = getCenter();
-
-    for (int i = 0; i < _points.size(); i ++) {
-        int j = 0;
-        int k = 0;
-
-        j = i;
-        if (i == _points.size() - 1) {
-            k = 0;
-        }
-        else {
-            k = i+1;
-        }
-
-        _shapeVertices.push_back(_points[j]);
-        _shapeVertices.push_back(_points[k]);
-        _shapeVertices.push_back(center);
-    }
 }
+
+glm::vec3 Polygon::normal()
+{
+    assert(_points.size() >= 3);
+
+    if (_points.size() < 3) {
+        fprintf(stderr, "Polygon should at least contains 3 points\n");
+    }
+
+    int n = _points.size();
+    glm::vec3 p0 = _points[0];
+    glm::vec3 p1 = _points[1];
+    float epsilon = 1e-6f;
+    glm::vec3 p2;
+    bool found = false;
+
+    // find the point that are not collinear
+    int i = 2;
+    while (i < n) {
+        p2 = _points[i];
+        glm::vec3 AB = p1 - p0;
+        glm::vec3 AC = p2 - p0;
+        if (glm::length(glm::cross(AB, AC)) > epsilon) {
+            found = true;
+            break;
+        }
+        i ++;
+    }
+
+    if (found) {
+        return glm::normalize(glm::cross(p1 - p0, p2 - p0));
+    }
+
+    fprintf(stderr, "Polygon should at least contains 3 points that are not collinear\n");
+    return glm::vec3(0.0, 0.0, 0.0);
+}
+
 
 Line::Line(glm::vec3 p0, glm::vec3 p1)
     :
-    _point0(p0),
-    _point1(p1)
+    _endPoint0(p0),
+    _endPoint1(p1)
 {
 
 }
@@ -336,8 +324,8 @@ void Line::createOutline()
     float step = Vangoh::outlinePrecision;
 
     // outline just need 2D points;
-    glm::vec2 p0 = glm::vec2(_point0.x, _point0.y);
-    glm::vec2 p1 = glm::vec2(_point1.x, _point1.y);
+    glm::vec2 p0 = glm::vec2(_endPoint0.x, _endPoint0.y);
+    glm::vec2 p1 = glm::vec2(_endPoint1.x, _endPoint1.y);
     float distance = glm::distance(p0, p1);
     glm::vec2 p = p0;
 

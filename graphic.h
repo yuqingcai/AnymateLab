@@ -11,21 +11,20 @@
 
 namespace Vangoh {
 
+
 class Graphic
 {
 public:
     Graphic();
-    Graphic(float x, float y, float width, float height);
+    Graphic(float x, float y, float z);
 
     void setX(float x);
     void setY(float y);
-    void setWidth(float width);
-    void setHeight(float height);
+    void setZ(float z);
 
     float getX();
     float getY();
-    float getWidth();
-    float getHeight();
+    float getZ();
 
     virtual void draw() = 0;
 
@@ -33,45 +32,46 @@ protected:
 
     float _x;
     float _y;
-    float _width;
-    float _height;
+    float _z;
 };
 
 
-class GeometryShape : public Graphic
+class Shape : public Graphic
 {
 public:
-
-    GeometryShape();
-    GeometryShape(float x, float y, float width, float height);
-    virtual ~ GeometryShape();
+    Shape();
+    Shape(float x, float y, float z);
+    virtual ~ Shape();
     void setPen(Pen& pen);
-    std::vector<glm::vec3>& getBorderVertices();
+    std::vector<glm::vec3>& getOutlineVertices();
     std::vector<glm::vec3>& getShapeVertices();
-    std::vector<glm::vec3>& getBorderGuideLineVertices();
+    std::vector<glm::vec3>& getGuideLineVertices();
 
     void draw() override;
 
 protected:
 
     virtual void createOutline() = 0;
-    virtual void createBorderVertices();
+    virtual void createOutlineVertices();
     virtual void createShapeVertices();
 
     VertexGenerator _vertexGenerator;
+
     Pen _pen;
     Outline _outline;
-    std::vector<glm::vec3> _borderVertices;
-    std::vector<glm::vec3> _borderGuideLineVertices;
+
+    std::vector<glm::vec3> _outlineVertices;
+    std::vector<glm::vec3> _guideLineVertices;
     std::vector<glm::vec3> _shapeVertices;
 
+    glm::mat4 _translationMatrix;
     glm::mat4 _rotateMatrix;
     glm::mat4 _scaleMatrix;
     glm::mat4 _shearingMatrix;
 
 };
 
-class Polygon: public GeometryShape
+class Polygon: public Shape
 {
 public:
     Polygon();
@@ -82,16 +82,14 @@ public:
 protected:
     void createShapeVertices() override;
     void createOutline() override;
-
-    void sortPointsCounterClockwise();
-
-    glm::vec3 getCenter();
+    virtual glm::vec3 normal();
+    virtual glm::vec3 center();
 
     std::vector<glm::vec3> _points;
+
 };
 
-
-class Line: public GeometryShape
+class Line: public Shape
 {
 public:
     Line(glm::vec3 p0, glm::vec3 p1);
@@ -100,8 +98,8 @@ public:
 protected:
     void createOutline() override;
 
-    glm::vec3 _point0;
-    glm::vec3 _point1;
+    glm::vec3 _endPoint0;
+    glm::vec3 _endPoint1;
 };
 
 

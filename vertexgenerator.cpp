@@ -1,6 +1,4 @@
 #include "vertexgenerator.h"
-#include <iostream>
-#include <cmath>
 #include "tools.h"
 
 namespace Vangoh {
@@ -104,6 +102,48 @@ VertexGenerator::createOutlineFrame(Outline& outline, int i,
     return vertices;
 }
 
+std::vector<glm::vec2>
+VertexGenerator::createOutlineGuideLine(Outline& outline, int i,
+                                    float weight, JoinStyle joinStyle,
+                                    CapStyle capStyle)
+{
+
+    std::vector<glm::vec2> vertices;
+
+    std::vector<OutlinePoint>& points = outline.getPoints();
+    int n = points.size();
+
+    if (!n || n < 2 || i < 0 || i >= n) {
+        return vertices;
+    }
+
+    glm::vec2 pi = points[i].getPosition();
+    if (points[i].isCuspPoint()) {
+        glm::vec2 pij0, pij1, pj0, pj1, pik0, pik1, pk0, pk1;
+        if (verticesOfOutlineCuspFrame(outline, i, weight,
+                                       &pij0, &pij1, &pj0, &pj1,
+                                       &pik0, &pik1, &pk0, &pk1))
+        {
+            vertices.push_back(pj0);
+            vertices.push_back(pi);
+            vertices.push_back(pi);
+            vertices.push_back(pj1);
+        }
+    }
+    else {
+        glm::vec2 pi0, pi1, pi2, pi3;
+        if (verticesOfOutlineFrame(outline, i, weight, &pi0, &pi1, &pi2, &pi3)) {
+            vertices.push_back(pi0);
+            vertices.push_back(pi);
+            vertices.push_back(pi);
+            vertices.push_back(pi1);
+        }
+    }
+
+    return vertices;
+}
+
+
 bool VertexGenerator::verticesOfOutlineFrame(
     Outline& outline, int i, float weight,
     glm::vec2* pi0, glm::vec2* pi1, glm::vec2* pi2, glm::vec2* pi3)
@@ -120,7 +160,7 @@ bool VertexGenerator::verticesOfOutlineFrame(
         int k = i + 1;
         glm::vec2 pi = points[i].getPosition();
         glm::vec2 pk = points[k].getPosition();
-        glm::vec2 normal_ik = orthogonal(pi, pk, CounterClockwise);
+        glm::vec2 normal_ik = orthogonal(pi, pk);
         float offset_ik = glm::distance(pi, pk) / 2.0;
         glm::vec2 direction_ik = glm::normalize(pk - pi);
 
@@ -133,7 +173,7 @@ bool VertexGenerator::verticesOfOutlineFrame(
         int j = i - 1;
         glm::vec2 pj = points[j].getPosition();
         glm::vec2 pi = points[i].getPosition();
-        glm::vec2 normal_ji = orthogonal(pj, pi, CounterClockwise);
+        glm::vec2 normal_ji = orthogonal(pj, pi);
         float offset_ji = glm::distance(pj, pi) / 2.0;
         glm::vec2 direction_ij = glm::normalize(pj - pi);
 
@@ -148,8 +188,8 @@ bool VertexGenerator::verticesOfOutlineFrame(
         glm::vec2 pj = points[j].getPosition();
         glm::vec2 pi = points[i].getPosition();
         glm::vec2 pk = points[k].getPosition();
-        glm::vec2 normal_ji = orthogonal(pj, pi, CounterClockwise);
-        glm::vec2 normal_ik = orthogonal(pi, pk, CounterClockwise);
+        glm::vec2 normal_ji = orthogonal(pj, pi);
+        glm::vec2 normal_ik = orthogonal(pi, pk);
         float offset_ij = glm::distance(pj, pi) / 2.0;
         float offset_ik = glm::distance(pi, pk) / 2.0;
         glm::vec2 direction_ij = glm::normalize(pj - pi);
@@ -187,7 +227,7 @@ bool VertexGenerator::verticesOfOutlineCuspFrame(
         int j = i - 1;
         glm::vec2 pj = points[j].getPosition();
         glm::vec2 pi = points[i].getPosition();
-        glm::vec2 normal_ji = orthogonal(pj, pi, CounterClockwise);
+        glm::vec2 normal_ji = orthogonal(pj, pi);
         float offset_ij = glm::distance(pj, pi)/2.0;
         glm::vec2 direction_ij = glm::normalize(pj - pi);
 
@@ -199,7 +239,7 @@ bool VertexGenerator::verticesOfOutlineCuspFrame(
         if (outline.isClosedPath()) {
             int k = 1;
             glm::vec2 pk = points[k].getPosition();
-            glm::vec2 normal_ik = orthogonal(pi, pk, CounterClockwise);
+            glm::vec2 normal_ik = orthogonal(pi, pk);
             float offset_ik = glm::distance(pi, pk)/2.0;
             glm::vec2 direction_ik = glm::normalize(pk - pi);
 
@@ -215,8 +255,8 @@ bool VertexGenerator::verticesOfOutlineCuspFrame(
         glm::vec2 pj = points[j].getPosition();
         glm::vec2 pi = points[i].getPosition();
         glm::vec2 pk = points[k].getPosition();
-        glm::vec2 normal_ji = orthogonal(pj, pi, CounterClockwise);
-        glm::vec2 normal_ik = orthogonal(pi, pk, CounterClockwise);
+        glm::vec2 normal_ji = orthogonal(pj, pi);
+        glm::vec2 normal_ik = orthogonal(pi, pk);
         float offset_ij = glm::distance(pj, pi)/2.0;
         float offset_ik = glm::distance(pi, pk)/2.0;
         glm::vec2 direction_ij = glm::normalize(pj - pi);
@@ -393,7 +433,7 @@ std::vector<glm::vec2> VertexGenerator::verticesOfCap(
 }
 
 
-std::vector<glm::vec2> VertexGenerator::generate(Pen& pen, Outline& outline)
+std::vector<glm::vec2> VertexGenerator::createOutlineFrames(Pen& pen, Outline& outline)
 {
     std::vector<glm::vec2> vertices;
 
@@ -403,43 +443,11 @@ std::vector<glm::vec2> VertexGenerator::generate(Pen& pen, Outline& outline)
         return vertices;
     }
 
-    int steps = static_cast<int>(std::round(pen.getWidth()));
-    float weight = pen.getWidth();
-    JoinStyle joinStyle = pen.getJoinStyle();
-    CapStyle capStyle = pen.getCapStyle();
-
-    // int phase = 0;
-    // int segments = 5;
-    // int blanks = 3;
-
-    // int j = 0;
-    // int c = 0;
-    // for (int i = 0; i < n; i ++) {
-    //     OutlinePoint& point = points[i];
-
-    //     if (c == 0) {
-    //         j = i;
-    //     }
-
-    //     if (!point.isBreakPoint()) {
-    //         c ++;
-    //     }
-
-    //     if (c == steps) {
-    //         printf("from:%d to:%d\n", j, i+1);
-    //         std::vector<glm::vec2> frames = createOutlineFrames(outline, j, i+1, weight, joinStyle);
-    //         vertices.insert(vertices.end(), frames.begin(), frames.end());
-    //         c = 0;
-    //     }
-
-    // }
-    // fflush(stdout);
-
+    // int steps = static_cast<int>(std::round(pen.getWidth()));
 
     for (int i = 0; i < n; i ++) {
         std::vector<glm::vec2> frame = createOutlineFrame(
-            outline, i, weight, joinStyle, capStyle);
-
+            outline, i, pen.getWidth(), pen.getJoinStyle(), pen.getCapStyle());
         vertices.insert(vertices.end(), frame.begin(), frame.end());
     }
 
@@ -447,79 +455,21 @@ std::vector<glm::vec2> VertexGenerator::generate(Pen& pen, Outline& outline)
 }
 
 
-std::vector<glm::vec2> VertexGenerator::guideLines(Pen& pen, Outline& outline)
+std::vector<glm::vec2> VertexGenerator::createOutlineGuideLines(Pen& pen, Outline& outline)
 {
     std::vector<glm::vec2> vertices;
 
     std::vector<OutlinePoint>& points = outline.getPoints();
     int n = points.size();
-    if (!n) {
+
+    if (!n || n < 2) {
         return vertices;
     }
 
     for (int i = 0; i < n; i ++) {
-        float weight = pen.getWidth();
-        float w = weight / 2.0;
-
-        int j = i + 1;
-        if (i == n-1) {
-            j = 0;
-        }
-
-        if (points[i].isCuspPoint()) {
-            if (i == n - 1){
-                int k = i - 1;
-                glm::vec2 pk = points[k].getPosition();
-                glm::vec2 pi = points[i].getPosition();
-                glm::vec2 normal = orthogonal(pk, pi, CounterClockwise);
-                glm::vec2 p0 = pi + (normal * (w));
-                glm::vec2 p1 = pi - (normal * (w));
-                vertices.push_back(p0);
-                vertices.push_back(p1);
-
-                if (outline.isClosedPath()) {
-                    k = 1;
-                    pi = points[i].getPosition();
-                    pk = points[k].getPosition();
-                    glm::vec2 normal = orthogonal(pi, pk, CounterClockwise);
-                    glm::vec2 p0 = pi + (normal * (w));
-                    glm::vec2 p1 = pi - (normal * (w));
-                    vertices.push_back(p0);
-                    vertices.push_back(p1);
-                }
-
-            }
-            else {
-                int k = i - 1;
-                glm::vec2 pk = points[k].getPosition();
-                glm::vec2 pi = points[i].getPosition();
-                glm::vec2 normal = orthogonal(pk, pi, CounterClockwise);
-                glm::vec2 p0 = pi + (normal * (w));
-                glm::vec2 p1 = pi - (normal * (w));
-                vertices.push_back(p0);
-                vertices.push_back(p1);
-
-                k = i + 1;
-                pi = points[i].getPosition();
-                pk = points[k].getPosition();
-                normal = orthogonal(pi, pk, CounterClockwise);
-                p0 = pi + (normal * (w));
-                p1 = pi - (normal * (w));
-                vertices.push_back(p0);
-                vertices.push_back(p1);
-            }
-        }
-        else {
-            glm::vec2 pi = points[i].getPosition();
-            glm::vec2 pj = points[j].getPosition();
-            glm::vec2 normal = orthogonal(pi,pj, CounterClockwise);
-            glm::vec2 p0 = pi + (normal * (w));
-            glm::vec2 p1 = pi - (normal * (w));
-            vertices.push_back(p0);
-            vertices.push_back(p1);
-        }
-
-
+        std::vector<glm::vec2> line = createOutlineGuideLine(
+            outline, i, pen.getWidth(), pen.getJoinStyle(), pen.getCapStyle());
+        vertices.insert(vertices.end(), line.begin(), line.end());
     }
 
     return vertices;

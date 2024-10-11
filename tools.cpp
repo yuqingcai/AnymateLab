@@ -1,34 +1,51 @@
 #include "tools.h"
-#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
 #include <cmath>
-#include <string>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
 namespace Vangoh {
 
-glm::vec2 normalize(const glm::vec2& p0, const glm::vec2& p1)
-{
-    float distance = glm::distance(p0, p1);
-    return (p1 - p0)/distance;
-}
-
 glm::vec2 pointRelateTo(const glm::vec2& p0, const glm::vec2& p1,
                         const float distance)
 {
-    glm::vec2 n = normalize(p0, p1);
+
+    glm::vec2 n = glm::normalize(p1 - p0);
     return p0 + (n * distance);
 }
 
-glm::vec2 orthogonal(const glm::vec2& p0, const glm::vec2& p1,
-                     ClockDirection direction)
+glm::vec3 pointRelateTo(const glm::vec3& p0, const glm::vec3& p1,
+                        const float distance)
+{
+
+    glm::vec3 n = glm::normalize(p1 - p0);
+    return p0 + (n * distance);
+}
+
+glm::vec2 orthogonal(const glm::vec2& p0, const glm::vec2& p1)
 {
     glm::vec2 n = glm::normalize(p1 - p0);
-    if (direction == Clockwise)
-        return glm::vec2(n.y, -n.x);
-    else
-        return glm::vec2(-n.y, n.x);
+    return glm::vec2(-n.y, n.x);
+}
+
+glm::vec3 orthogonalXY(const glm::vec3& p0, const glm::vec3& p1)
+{
+    glm::vec3 n = glm::normalize(p1 - p0);
+    return glm::vec3(-n.y, n.x, 0.0);
+}
+
+glm::vec3 orthogonalXZ(const glm::vec3& p0, const glm::vec3& p1)
+{
+    glm::vec3 n = glm::normalize(p1 - p0);
+    return glm::vec3(-n.z, 0.0, n.x);
+}
+
+glm::vec3 orthogonalYZ(const glm::vec3& p0, const glm::vec3& p1)
+{
+    glm::vec3 n = glm::normalize(p1 - p0);
+    return glm::vec3(0.0, -n.z, n.y);
 }
 
 glm::vec2 intersectPoint(const glm::vec2& p0, const glm::vec2& p1,
@@ -45,7 +62,7 @@ glm::vec2 intersectPoint(const glm::vec2& p0, const glm::vec2& p1,
     double det = A1 * B2 - A2 * B1;
 
     if (det == 0) {
-        std::cout << "Lines are parallel or coincident, no unique intersection" << std::endl;
+        printf("Lines are parallel or coincident, no unique intersection\n");
         return glm::vec2(0.0, 0.0);
     }
 
@@ -99,7 +116,7 @@ glm::vec2 pointRotateAround(const glm::vec2& center, const glm::vec2& p,
     return finalPos;
 }
 
-static float crossProduct2D(const glm::vec2& a, const glm::vec2& b) {
+static float cross2D(const glm::vec2& a, const glm::vec2& b) {
     return a.x * b.y - a.y * b.x;
 }
 
@@ -110,14 +127,12 @@ bool isPointOnLineSegment(const glm::vec2& p, const glm::vec2& p0,
     glm::vec2 p0p1 = p1 - p0;
 
     // if p0p and p0p1 are parallel
-    float crossProduct = crossProduct2D(p0p, p0p1);
-    if (glm::abs(crossProduct) > 1e-6) {
+    if (glm::abs(cross2D(p0p, p0p1)) > 1e-6) {
         return false;
     }
 
     // if p0p and p0p1 has same direction
-    float dotProduct = glm::dot(p0p, p0p1);
-    if (dotProduct < 0) {
+    if (glm::dot(p0p, p0p1) < 0) {
         return false;
     }
 
@@ -133,7 +148,7 @@ float angle2Vectors(const glm::vec2& v0, const glm::vec2& v1,
                     ClockDirection direction)
 {
     float dotProduct = glm::dot(v0, v1);
-    float crossProduct = crossProduct2D(v0, v1);
+    float crossProduct = cross2D(v0, v1);
     float angle = glm::atan(crossProduct, dotProduct);
 
     if (direction == CounterClockwise) {
