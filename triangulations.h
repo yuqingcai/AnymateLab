@@ -1,36 +1,46 @@
-#ifndef CURVE_H
-#define CURVE_H
+#ifndef TRIANGULATIONS_H
+#define TRIANGULATIONS_H
 
 #include "sampleitem.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "graphic.h"
 
-class CurveRenderer : public QQuickRhiItemRenderer
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Triangulation_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/lloyd_optimize_mesh_2.h>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Triangulation_vertex_base_2<K> Vb;
+typedef CGAL::Delaunay_mesh_face_base_2<K> Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;
+typedef CDT::Vertex_handle Vertex_handle;
+typedef CDT::Point Point;
+
+class TriangulationsRenderer: public QQuickRhiItemRenderer
 {
 public:
-    CurveRenderer();
-    ~CurveRenderer();
+    TriangulationsRenderer();
+    ~TriangulationsRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
 
 private:
     int createBuffer0();
-    int createBuffer1();
-    int createBuffer2();
     int createShaderResourceBinding0();
-    int createShaderResourceBinding1();
-    int createShaderResourceBinding2();
     int createPipline0();
-    int createPipline1();
-    int createPipline2();
+    void pushPointToVetices(Point& p, std::vector<float>& vectices);
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;
     QRhiTexture::Format _textureFormat = QRhiTexture::RGBA8;
-
 
     std::unique_ptr<QRhiGraphicsPipeline> _pipeline0;
     std::unique_ptr<QRhiShaderResourceBindings> _srb0;
@@ -39,24 +49,10 @@ private:
     std::unique_ptr<QRhiBuffer> _indexBuffer0;
     std::unique_ptr<QRhiBuffer> _modelBuffer0;
 
-    std::unique_ptr<QRhiGraphicsPipeline> _pipeline1;
-    std::unique_ptr<QRhiShaderResourceBindings> _srb1;
-    std::unique_ptr<QRhiBuffer> _uniformBuffer1;
-    std::unique_ptr<QRhiBuffer> _vectexBuffer1;
-    std::unique_ptr<QRhiBuffer> _indexBuffer1;
-    std::unique_ptr<QRhiBuffer> _modelBuffer1;
-
-
-    std::unique_ptr<QRhiGraphicsPipeline> _pipeline2;
-    std::unique_ptr<QRhiShaderResourceBindings> _srb2;
-    std::unique_ptr<QRhiBuffer> _uniformBuffer2;
-    std::unique_ptr<QRhiBuffer> _vectexBuffer2;
-    std::unique_ptr<QRhiBuffer> _indexBuffer2;
-    std::unique_ptr<QRhiBuffer> _modelBuffer2;
-
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
     glm::mat4* _model;
+
 
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
@@ -72,26 +68,21 @@ private:
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
     QPointF _focus = {0.0f, 0.0f};
-
-    std::vector<Vangoh::Shape*> _shapes;
-
 };
 
-class Curve: public SampleItem
+class Triangulations: public SampleItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Curve)
+    QML_NAMED_ELEMENT(Triangulations)
 
 public:
-    Curve();
-    virtual ~ Curve();
+    Triangulations();
+    virtual ~ Triangulations();
     QQuickRhiItemRenderer *createRenderer() override;
-    std::vector<Vangoh::Shape*>& getShapes();
 
-protected:
 
 private:
-    std::vector<Vangoh::Shape*> _shapes;
+
 };
 
-#endif // CURVE_H
+#endif // TRIANGULATIONS_H

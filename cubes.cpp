@@ -6,25 +6,11 @@
 #include <QtMath>
 #include <QPainter>
 
-#define STD140_ALIGN_INT   4
-#define STD140_ALIGN_FLOAT 4
-#define STD140_ALIGN_VEC2  8
-#define STD140_ALIGN_VEC3 16
-#define STD140_ALIGN_VEC4 16
-#define STD140_ALIGN_MAT4 64
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 
 static const QSize TEXTURE_SIZE(512, 512);
 
-static QShader getShader(const QString &name)
-{
-    QFile f(name);
-    return f.open(QIODevice::ReadOnly) ?
-               QShader::fromSerialized(f.readAll()) : QShader();
-}
-
-static size_t align(size_t offset, size_t alignment) {
-    return (offset + alignment - 1) & ~(alignment - 1);
-}
 
 float vertexCube[] = {
     //---- Position------       -----Color-----
@@ -931,93 +917,9 @@ Cubes::Cubes()
     setFlag(ItemAcceptsInputMethod, true);
 }
 
-void Cubes::hoverMoveEvent(QHoverEvent *event)
+Cubes:: ~ Cubes()
 {
-    if (m_spaceButtonDown) {
 
-        int offsetX = (int)event->position().x() -
-                      m_mosePosition0.x() - this->width()/2;
-        int offsetY = this->height()/2 -
-                      (int)event->position().y() - m_mosePosition0.y();
-
-        m_focus.setX(offsetX);
-        m_focus.setY(offsetY);
-
-        // qDebug() << m_focus << m_mosePosition0 << event->position();
-    }
-    return QQuickRhiItem::hoverMoveEvent(event);
-}
-
-void Cubes::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton) {
-        if (!m_leftButtonDown) {
-            m_leftButtonDown = true;
-            qDebug("m_leftButtonDown true");
-        }
-    }
-    return QQuickRhiItem::mousePressEvent(event);
-}
-
-
-void Cubes::mouseReleaseEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton) {
-        if (m_leftButtonDown) {
-            m_leftButtonDown = false;
-            qDebug("m_leftButtonDown false");
-        }
-    }
-    return QQuickRhiItem::mouseReleaseEvent(event);
-}
-
-void Cubes::wheelEvent(QWheelEvent *event)
-{
-    // qDebug() << "Mouse wheel delta: " << event->angleDelta();
-    if (event->angleDelta().y() > 0) {
-        m_zoom += 20.0;
-    }
-    else if (event->angleDelta().y() < 0) {
-        m_zoom -= 20.0;
-    }
-    return QQuickRhiItem::wheelEvent(event);
-}
-
-
-void Cubes::keyPressEvent(QKeyEvent *event)
-{
-    if (event->key() == Qt::Key_Up) {
-        m_orthoY -= 100.0;
-    }
-    else if (event->key() == Qt::Key_Down) {
-        m_orthoY += 100.0;
-    }
-    else if (event->key() == Qt::Key_Left) {
-        m_orthoX += 100.0;
-    }
-    else if (event->key() == Qt::Key_Right) {
-        m_orthoX -= 100.0;
-    }
-    else if (event->key() == Qt::Key_Space) {
-        if (!m_spaceButtonDown) {
-            m_spaceButtonDown = true;
-            qDebug("m_spaceButtonDown true");
-        }
-    }
-
-    return QQuickRhiItem::keyPressEvent(event);
-}
-
-void Cubes::keyReleaseEvent(QKeyEvent *event)
-{
-    if (event->key() == Qt::Key_Space) {
-        if (m_spaceButtonDown) {
-            m_spaceButtonDown = false;
-            qDebug("m_spaceButtonDown false");
-        }
-    }
-
-    return QQuickRhiItem::keyReleaseEvent(event);
 }
 
 QQuickRhiItemRenderer* Cubes::createRenderer()
@@ -1025,40 +927,3 @@ QQuickRhiItemRenderer* Cubes::createRenderer()
     return new CubesRenderer();
 }
 
-
-float Cubes::angle() const
-{
-    return m_angle;
-}
-
-void Cubes::setAngle(float a)
-{
-    if (m_angle == a)
-        return;
-
-    m_angle = a;
-    emit angleChanged();
-    update();
-}
-
-
-float Cubes::getOrthoX()
-{
-    return m_orthoX;
-}
-
-
-float Cubes::getOrthoY()
-{
-    return m_orthoY;
-}
-
-float Cubes::getZoom()
-{
-    return m_zoom;
-}
-
-QPointF& Cubes::getFocus()
-{
-    return m_focus;
-}

@@ -14,6 +14,9 @@ VertexGenerator::~VertexGenerator()
 
 }
 
+
+
+
 bool VertexGenerator::verticesOfOutlineMesh(Outline& outline,
                                             int i,
                                             float height,
@@ -151,7 +154,11 @@ std::vector<glm::vec3> VertexGenerator::createOutlineMesh(Outline& outline,
 
     if (points[i].isCuspPoint()) {
         return vertices;
-        // glm::vec3 pij0, pij1, pj0, pj1, pik0, pik1, pk0, pk1;
+        glm::vec3 pij0, pij1, pij2, pij3, pij4, pij5,
+            pij6, pij7, pij8, pij9, pij10, pij11;
+        glm::vec3 pik0, pik1, pik2, pik3, pik4, pik5,
+            pik6, pik7, pik8, pik9, pik10, pik11;
+
         // std::vector<glm::vec2> gaps;
         // glm::vec2 pi = points[i].getPosition();
 
@@ -325,9 +332,6 @@ VertexGenerator::createOutlineGuideLineUnit(Outline& outline,
 
     return vertices;
 }
-
-
-
 
 std::vector<glm::vec3> VertexGenerator::createOutlineMeshes(Pen& pen, Outline& outline)
 {

@@ -20,7 +20,8 @@ ApplicationWindow {
         anchors.top: mainMenu.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height : 48
+        // height : 48
+        height : 0
         color: Qt.rgba(1, 1, 1, 0.0)
 
         Rectangle {
@@ -125,7 +126,6 @@ ApplicationWindow {
             //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
             //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
             //     alphaBlending: true
-
             //     NumberAnimation on angle {
             //         from: 0
             //         to: 360
@@ -144,7 +144,6 @@ ApplicationWindow {
             //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
             //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
             //     alphaBlending: true
-
             //     NumberAnimation on angle {
             //         from: 0
             //         to: 360
@@ -154,7 +153,83 @@ ApplicationWindow {
             //     }
             // }
 
-            Curve {
+            // Curve {
+            //     SplitView.fillWidth: true
+            //     SplitView.fillHeight: true
+            //     sampleCount: 4 // normal MSAA, 8: high MSAA
+            //     // colorBufferFormat:RGBA8
+            //     mirrorVertically: false
+            //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     alphaBlending: true
+            //     NumberAnimation on angle {
+            //         from: 0
+            //         to: 360
+            //         duration: 12000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            //     NumberAnimation on scale {
+            //         from: 1
+            //         to: 10
+            //         duration: 6000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            // }
+
+            // Triangulations{
+            //     SplitView.fillWidth: true
+            //     SplitView.fillHeight: true
+            //     sampleCount: 4 // normal MSAA, 8: high MSAA
+            //     // colorBufferFormat:RGBA8
+            //     mirrorVertically: false
+            //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     alphaBlending: true
+            //     NumberAnimation on angle {
+            //         from: 0
+            //         to: 360
+            //         duration: 12000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            //     NumberAnimation on scale {
+            //         from: 1
+            //         to: 10
+            //         duration: 6000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            // }
+
+
+            // Squircles{
+            //     SplitView.fillWidth: true
+            //     SplitView.fillHeight: true
+            //     sampleCount: 4 // normal MSAA, 8: high MSAA
+            //     // colorBufferFormat:RGBA8
+            //     mirrorVertically: false
+            //     // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
+            //     alphaBlending: true
+            //     NumberAnimation on angle {
+            //         from: 0
+            //         to: 360
+            //         duration: 12000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            //     NumberAnimation on scale {
+            //         from: 1
+            //         to: 10
+            //         duration: 6000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
+            // }
+
+            Arrangements2D {
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
                 sampleCount: 4 // normal MSAA, 8: high MSAA
@@ -163,7 +238,6 @@ ApplicationWindow {
                 // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
                 // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
                 alphaBlending: true
-
                 NumberAnimation on angle {
                     from: 0
                     to: 360
@@ -171,8 +245,6 @@ ApplicationWindow {
                     loops: Animation.Infinite
                     running:true
                 }
-
-
                 NumberAnimation on scale {
                     from: 1
                     to: 10

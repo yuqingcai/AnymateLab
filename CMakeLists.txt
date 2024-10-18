@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(AnymateLab VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_definitions(QT_NO_KEYWORDS)
 
 add_definitions(-DANYMATE_DEBUG)
 
@@ -13,25 +14,15 @@ qt_standard_project_setup(REQUIRES 6.5)
 qt_add_resources(RESOURCES resources.qrc)
 
 qt_add_executable(appAnymateLab
-    cubes.cpp
-    cubes.h
     main.cpp
     features.cpp
     features.h
-    motion.cpp
-    motion.h
-    cubes.cpp
-    cubes.h
-    curve.cpp
-    curve.h
     texturerenderer.h
     texturerenderer.cpp
     graphic.h
     graphic.cpp
     color.h
     color.cpp
-    earclipping.h
-    earclipping.cpp
     pen.h
     pen.cpp
     vangohnamespace.h
@@ -51,6 +42,13 @@ qt_add_qml_module(appAnymateLab
         Main.qml
         ProjectManager.qml
         MainMenu.qml
+        SOURCES cubes.cpp cubes.h
+        SOURCES motion.cpp motion.h
+        SOURCES curve.cpp curve.h
+        SOURCES triangulations.cpp triangulations.h
+        SOURCES squircles.cpp squircles.h
+        SOURCES sampleitem.cpp sampleitem.h
+        SOURCES arrangements2d.cpp arrangements2d.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -71,6 +69,8 @@ target_link_libraries(appAnymateLab
     Qt6::GuiPrivate
     Qt6::Qml
     Qt6::Quick
+    gmp
+    mpfr
 )
 
 include(GNUInstallDirs)
@@ -127,4 +127,10 @@ qt_add_shaders(appAnymateLab "appAnymateLab_color_shaders"
         shaders/color.vert
         shaders/color.frag
 )
+
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
+include_directories(/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13)
+include_directories(/opt/homebrew/include/freetype2)
+target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/lib/python3.13/config-3.13-darwin/libpython3.13.dylib)
+target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/lib/libfreetype.dylib)
+# target_link_libraries(appAnymateLab PRIVATE "-framework CoreFoundation")

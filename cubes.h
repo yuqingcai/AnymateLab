@@ -1,8 +1,7 @@
 #ifndef CUBES_H
 #define CUBES_H
 
-#include <QQuickRhiItem>
-#include <rhi/qrhi.h>
+#include "sampleitem.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -87,46 +86,17 @@ private:
     QPointF m_focus = {0.0f, 0.0f};
 };
 
-class Cubes: public QQuickRhiItem
+class Cubes: public SampleItem
 {
     Q_OBJECT
     QML_NAMED_ELEMENT(Cubes)
-    Q_PROPERTY(float angle READ angle WRITE setAngle NOTIFY angleChanged)
 
 public:
     Cubes();
+    ~ Cubes();
     QQuickRhiItemRenderer *createRenderer() override;
 
-    float angle() const;
-    void setAngle(float a);
-    float getOrthoX();
-    float getOrthoY();
-    float getZoom();
-    QPointF& getFocus();
-
-protected:
-    void hoverMoveEvent(QHoverEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void wheelEvent(QWheelEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
-    void keyReleaseEvent(QKeyEvent *event) override;
-
-
-signals:
-    void angleChanged();
-
 private:
-    float m_angle = 0.0f;
-    float m_orthoX = 0.0f;
-    float m_orthoY = 0.0f;
-    float m_zoom = 1.0f;
-    QPointF m_focus = {0.0f, 0.0f};
-    bool m_spaceButtonDown = false;
-    bool m_leftButtonDown = false;
-
-    QPoint m_mosePosition0 = {0, 0};
-    QPoint m_mosePosition1 = {0, 0};
 };
 
 #endif // CUBES_H
