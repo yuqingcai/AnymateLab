@@ -5,49 +5,33 @@
 #include <initializer_list>
 #include <glm/glm.hpp>
 #include <color.h>
-#include "outline.h"
 #include "pen.h"
-#include "vertexgenerator.h"
+#include "outline2D.h"
 
 namespace Vangoh {
 
 
-class Graphic
+class GraphicObject
 {
 public:
-    Graphic();
-    Graphic(float x, float y, float z);
-
-    void setX(float x);
-    void setY(float y);
-    void setZ(float z);
-
-    float getX();
-    float getY();
-    float getZ();
-
-    virtual void draw() = 0;
+    GraphicObject();
 
 protected:
 
-    float _x;
-    float _y;
-    float _z;
 };
 
 
-class Shape : public Graphic
+class Shape : public GraphicObject
 {
 public:
     Shape();
-    Shape(float x, float y, float z);
     virtual ~ Shape();
     void setPen(Pen& pen);
-    std::vector<glm::vec3>& getOutlineVertices();
-    std::vector<glm::vec3>& getShapeVertices();
-    std::vector<glm::vec3>& getGuideLineVertices();
+    std::vector<glm::vec2>& getOutlineVertices();
+    std::vector<glm::vec2>& getShapeVertices();
+    std::vector<glm::vec2>& getGuideLineVertices();
 
-    void draw() override;
+    virtual void createVertices();
 
 protected:
 
@@ -55,14 +39,12 @@ protected:
     virtual void createOutlineVertices();
     virtual void createShapeVertices();
 
-    VertexGenerator _vertexGenerator;
-
     Pen _pen;
-    Outline _outline;
+    Outline2D _outline;
 
-    std::vector<glm::vec3> _outlineVertices;
-    std::vector<glm::vec3> _guideLineVertices;
-    std::vector<glm::vec3> _shapeVertices;
+    std::vector<glm::vec2> _outlineVertices;
+    std::vector<glm::vec2> _guideLineVertices;
+    std::vector<glm::vec2> _shapeVertices;
 
     glm::mat4 _translationMatrix;
     glm::mat4 _rotateMatrix;
@@ -75,31 +57,67 @@ class Polygon: public Shape
 {
 public:
     Polygon();
-    Polygon(std::initializer_list<glm::vec3> list);
-    Polygon(std::vector<glm::vec3> list);
+    Polygon(std::initializer_list<glm::vec2> list);
+    Polygon(std::vector<glm::vec2> list);
     virtual ~ Polygon();
 
 protected:
-    void createShapeVertices() override;
+    // void createShapeVertices() override;
     void createOutline() override;
-    std::vector<glm::vec3> _points;
-
+    void makeClose();
+    std::vector<glm::vec2> _points;
 };
 
 class Line: public Shape
 {
 public:
-    Line(glm::vec3 p0, glm::vec3 p1);
+    Line(glm::vec2 p0, glm::vec2 p1);
     virtual ~ Line();
 
 protected:
     void createOutline() override;
 
-    glm::vec3 _endPoint0;
-    glm::vec3 _endPoint1;
+    glm::vec2 _endPoint0;
+    glm::vec2 _endPoint1;
 };
 
+class Squircles: public Shape
+{
+public:
+    Squircles(glm::vec2 center, float ra, float rb, float n);
+    virtual ~ Squircles();
 
+protected:
+    void createOutline() override;
+
+    glm::vec2 _center;
+    float _ra;
+    float _rb;
+    float _n;
+
+};
+
+class BezierCurve: public Shape
+{
+
+public:
+    BezierCurve(glm::vec2 point0, glm::vec2 point1,
+                glm::vec2 point2, glm::vec2 point3);
+    virtual ~ BezierCurve();
+
+protected:
+    // void createShapeVertices() override;
+    void createOutline() override;
+    glm::vec2 interp(float t);
+    glm::vec2 derivative(float t);
+    float arcLength(float t0, float t1, int segments = 100);
+    float findTForArcLength(float targetLength, int segments = 100);
+
+    glm::vec2 _point0;
+    glm::vec2 _point1;
+    glm::vec2 _point2;
+    glm::vec2 _point3;
+};
 
 }
 

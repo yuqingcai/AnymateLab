@@ -2,7 +2,7 @@
 #define VERTEXGENERATOR_H
 
 #include "pen.h"
-#include "outline.h"
+#include "outline2D.h"
 
 namespace Vangoh {
 

@@ -1,24 +1,18 @@
-#include "squircles.h"
-#include <QFile>
-#include <QtGui/qevent.h>
-#include <cstdio>
-#include <iostream>
+#include "boostgeometry.h"
 #include <glm/gtc/type_ptr.hpp>
 
-SquirclesRenderer::SquirclesRenderer()
+#include <iostream>
+
+BoostGeometryRenderer::BoostGeometryRenderer()
 {
-    _model = new glm::mat4(1.0f);
 }
 
 
-SquirclesRenderer::~SquirclesRenderer()
+BoostGeometryRenderer::~BoostGeometryRenderer()
 {
-    if (_model) {
-        delete [] _model;
-    }
 }
 
-int SquirclesRenderer::createBuffer0()
+int BoostGeometryRenderer::createBuffer0()
 {
     if (!_rhi)
         return -1;
@@ -43,7 +37,7 @@ int SquirclesRenderer::createBuffer0()
     return 0;
 }
 
-int SquirclesRenderer::createShaderResourceBinding0()
+int BoostGeometryRenderer::createShaderResourceBinding0()
 {
 
     if (!_rhi)
@@ -71,7 +65,7 @@ int SquirclesRenderer::createShaderResourceBinding0()
     _srb0->create();
     return 0;
 }
-int SquirclesRenderer::createPipline0()
+int BoostGeometryRenderer::createPipline0()
 {
     if (!_rhi || !_srb0)
         return -1;
@@ -115,9 +109,9 @@ int SquirclesRenderer::createPipline0()
     _pipeline0->setDepthTest(true);
     _pipeline0->setDepthWrite(true);
 
-    _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
+    // _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
     // _pipeline0->setTopology(QRhiGraphicsPipeline::LineStrip);
-    // _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
+    _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
     targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
@@ -131,7 +125,7 @@ int SquirclesRenderer::createPipline0()
     return 0;
 }
 
-void SquirclesRenderer::initialize(QRhiCommandBuffer *cb)
+void BoostGeometryRenderer::initialize(QRhiCommandBuffer *cb)
 {
 
     if (_rhi != rhi()) {
@@ -160,16 +154,7 @@ void SquirclesRenderer::initialize(QRhiCommandBuffer *cb)
     }
 }
 
-void SquirclesRenderer::pushPointToVetices(Point_2& p, std::vector<float>& vectices)
-{
-    double x = CGAL::to_double(p.x());
-    double y = CGAL::to_double(p.y());
-    vectices.push_back(x);
-    vectices.push_back(y);
-    vectices.push_back(0.0);
-}
-
-void SquirclesRenderer::render(QRhiCommandBuffer *cb)
+void BoostGeometryRenderer::render(QRhiCommandBuffer *cb)
 {
     const QSize outputSize = renderTarget()->pixelSize();
     _projection = _rhi->clipSpaceCorrMatrix();
@@ -212,134 +197,79 @@ void SquirclesRenderer::render(QRhiCommandBuffer *cb)
                                sizeof(glm::vec4),
                                &lineColor);
 
+    offset = 0;
+    // for (int i = 0; i < _shapes.size(); i ++) {
+    //     std::vector<glm::vec2>& vertices2D = _shapes[i]->getShapeVertices();
+    //     std::vector<glm::vec3> vertices;
+    //     for (glm::vec2 p : vertices2D) {
+    //         vertices.push_back(glm::vec3(p.x, p.y, 0.0));
+    //     }
+    //     qint32 size = vertices.size() * sizeof(glm::vec3);
+    //     batch->uploadStaticBuffer(_vectexBuffer0.get(), offset, size, vertices.data());
+    //     offset += size;
 
-    std::vector<float> vertices;
-    std::vector<std::pair<double, double>> points;
-    double cx = 0.0, cy = 0.0, r = 50.0;
-    double step = 1.0;
-    double a = 50.0;
-    double b = 50.0;
-    double n = 5.0;
-    for (int i = 0; i < 90; ++i) {
-        double theta = i * M_PI / 180.0;
-        double x = a * pow(cos(theta), 2.0 / n);
-        double y = b * pow(sin(theta), 2.0 / n);
-        points.emplace_back(x, y);
-    }
-
-    CDT cdt;
-    std::vector<Vertex_handle> vs;
-
-    for (int i = 0; i < points.size(); i ++) {
-        Vertex_handle v = cdt.insert(Point_2(points[i].first, points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = points.size() - 1; i >= 0; i --) {
-        Vertex_handle v = cdt.insert(Point_2(-points[i].first, points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = 0; i < points.size(); i ++) {
-        Vertex_handle v = cdt.insert(Point_2(-points[i].first, -points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = points.size() - 1; i >= 0; i --) {
-        Vertex_handle v = cdt.insert(Point_2(points[i].first, -points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = 0; i < vs.size(); i ++) {
-        if (i < vs.size() - 1) {
-            cdt.insert_constraint(vs[i], vs[i+1]);
-        }
-        else {
-            cdt.insert_constraint(vs[i], vs[0]);
-        }
-    }
-
-    std::list<Point_2> list_of_seeds;
-    CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::seeds(list_of_seeds));
-
-    for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); fit ++) {
-
-            if(fit->is_in_domain()) {
-
-            Point_2 p0 = fit->vertex(0)->point();
-            Point_2 p1 = fit->vertex(1)->point();
-            Point_2 p2 = fit->vertex(2)->point();
-
-
-            // pushPointToVetices(p0, vertices);
-            // pushPointToVetices(p1, vertices);
-            // pushPointToVetices(p2, vertices);
-
-            pushPointToVetices(p0, vertices);
-            pushPointToVetices(p1, vertices);
-            pushPointToVetices(p1, vertices);
-            pushPointToVetices(p2, vertices);
-            pushPointToVetices(p2, vertices);
-            pushPointToVetices(p0, vertices);
-        }
-
-    }
-    batch->uploadStaticBuffer(_vectexBuffer0.get(),
-                              0,
-                              vertices.size() * sizeof(float),
-                              vertices.data());
-
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
-    // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    batch->uploadStaticBuffer(_modelBuffer0.get(), 0, sizeof(glm::mat4), &model);
+    //     glm::mat4 model = glm::mat4(1.0f);
+    //     // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    //     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    //     batch->uploadStaticBuffer(_modelBuffer0.get(), i * sizeof(glm::mat4),
+    //                               sizeof(glm::mat4), &model);
+    // }
 
     cb->resourceUpdate(batch);
 
-    // draw indexed
     cb->setGraphicsPipeline(_pipeline0.get());
     cb->setShaderResources(_srb0.get());
+    offset = 0;
+    // for (int i = 0; i < _shapes.size(); i ++) {
+    //     std::vector<glm::vec2>& vertices = _shapes[i]->getShapeVertices();
+    //     const QRhiCommandBuffer::VertexInput inputBindings[] = {
+    //         { _vectexBuffer0.get(), offset },
+    //         { _modelBuffer0.get(), i * sizeof(glm::mat4) }
+    //     };
+    //     cb->setVertexInput(0, 2, inputBindings);
+    //     cb->draw(vertices.size());
+    //     offset += vertices.size() * sizeof(glm::vec3);
+    // }
 
-    const QRhiCommandBuffer::VertexInput inputBindings[] = {
-        { _vectexBuffer0.get(), 0 },
-        { _modelBuffer0.get(), 0 }
-    };
-    cb->setVertexInput(0, 2, inputBindings, _indexBuffer0.get(), 0, QRhiCommandBuffer::IndexUInt32);
-    // cb->drawIndexed(sizeof(indices));
-    cb->draw(vertices.size()/3);
 
     cb->endPass();
+
 }
 
-void SquirclesRenderer::synchronize(QQuickRhiItem *rhiItem)
+void BoostGeometryRenderer::synchronize(QQuickRhiItem *rhiItem)
 {
-    Squircles *item = static_cast<Squircles *>(rhiItem);
+    BoostGeometry *item = static_cast<BoostGeometry *>(rhiItem);
     if (item->angle() != _angle)
         _angle = item->angle();
-
-
-    if (item->scale() != _scale)
-        _scale = item->scale();
 
     _orthoX = item->getOrthoX();
     _orthoY = item->getOrthoY();
     _zoom = item->getZoom();
     _focus = item->getFocus();
+
+    // _shapes = item->getShapes();
+
 }
 
-Squircles::Squircles()
+BoostGeometry::BoostGeometry()
 {
 }
 
-Squircles:: ~ Squircles()
+BoostGeometry:: ~ BoostGeometry()
 {
-
+    // for (auto ptr : _shapes) {
+    //     delete ptr;
+    // }
+    // _shapes.clear();
 }
 
-QQuickRhiItemRenderer* Squircles::createRenderer()
+QQuickRhiItemRenderer* BoostGeometry::createRenderer()
 {
-    return new SquirclesRenderer();
+    return new BoostGeometryRenderer();
 }
 
+
+// std::vector<Vangoh::Shape*>& BoostGeometry::getShapes()
+// {
+//     return _shapes;
+// }

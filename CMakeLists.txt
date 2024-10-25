@@ -26,10 +26,10 @@ qt_add_executable(appAnymateLab
     pen.h
     pen.cpp
     vangohnamespace.h
-    outline.h
-    outline.cpp
-    vertexgenerator.h
-    vertexgenerator.cpp
+    outline2D.h
+    outline2D.cpp
+    # vertexgenerator.h
+    # vertexgenerator.cpp
     tools.h
     tools.cpp
     ${RESOURCES}
@@ -49,6 +49,8 @@ qt_add_qml_module(appAnymateLab
         SOURCES squircles.cpp squircles.h
         SOURCES sampleitem.cpp sampleitem.h
         SOURCES arrangements2d.cpp arrangements2d.h
+        SOURCES morphing.cpp morphing.h
+        SOURCES boostgeometry.cpp boostgeometry.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

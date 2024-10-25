@@ -6,24 +6,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Delaunay_mesher_2.h>
-#include <CGAL/Delaunay_mesh_face_base_2.h>
-#include <CGAL/Delaunay_mesh_size_criteria_2.h>
-#include <CGAL/Triangulation_2.h>
-#include <CGAL/Triangulation_conformer_2.h>
-#include <CGAL/lloyd_optimize_mesh_2.h>
-#include <CGAL/Arr_segment_traits_2.h>
-#include <CGAL/Arrangement_2.h>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Triangulation_vertex_base_2<K> Vb;
-typedef CGAL::Delaunay_mesh_face_base_2<K> Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;
-typedef CDT::Vertex_handle Vertex_handle;
-typedef CDT::Point Point;
+
 
 class SquirclesRenderer: public QQuickRhiItemRenderer
 {
@@ -38,7 +22,7 @@ private:
     int createBuffer0();
     int createShaderResourceBinding0();
     int createPipline0();
-    void pushPointToVetices(Point& p, std::vector<float>& vectices);
+    void pushPointToVetices(Point_2& p, std::vector<float>& vectices);
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;

@@ -235,10 +235,12 @@ void TriangulationsRenderer::initialize(QRhiCommandBuffer *cb)
     }
 }
 
-void TriangulationsRenderer::pushPointToVetices(Point& p, std::vector<float>& vectices)
+void TriangulationsRenderer::pushPointToVetices(Point_2& p, std::vector<float>& vectices)
 {
-    vectices.push_back(p.x());
-    vectices.push_back(p.y());
+    double x = CGAL::to_double(p.x());
+    double y = CGAL::to_double(p.y());
+    vectices.push_back(x);
+    vectices.push_back(y);
     vectices.push_back(0.0);
 }
 
@@ -288,82 +290,106 @@ void TriangulationsRenderer::render(QRhiCommandBuffer *cb)
 
 
     CDT cdt;
-    double cx = 0.0, cy = 0.0, r = 50.0;
-    double step = 1.0;
-    std::vector<Vertex_handle> vs;
-    for (int i = 0; i < 360; i += step) {
-        double theta = i * M_PI / 180.0;
-        double x = cx + r * cos(theta);
-        double y = cy + r * sin(theta);
-        Vertex_handle v = cdt.insert(Point(x,y));
-        vs.push_back(v);
-    }
+    // 绘制一个圆，并添加 seeds
+    //
+    // double cx = 0.0, cy = 0.0, r = 50.0;
+    // double step = 1.0;
+    // std::vector<Vertex_handle> vs;
+    // for (int i = 0; i < 360; i += step) {
+    //     double theta = i * M_PI / 180.0;
+    //     double x = cx + r * cos(theta);
+    //     double y = cy + r * sin(theta);
+    //     Vertex_handle v = cdt.insert(Point_2(x,y));
+    //     vs.push_back(v);
+    // }
 
-    for (int i = 0; i < vs.size(); i ++) {
-        if (i < vs.size() - 1) {
-            cdt.insert_constraint(vs[i], vs[i+1]);
-        }
-        else {
-            cdt.insert_constraint(vs[i], vs[0]);
-        }
-    }
+    // for (int i = 0; i < vs.size(); i ++) {
+    //     if (i < vs.size() - 1) {
+    //         cdt.insert_constraint(vs[i], vs[i+1]);
+    //     }
+    //     else {
+    //         cdt.insert_constraint(vs[i], vs[0]);
+    //     }
+    // }
 
-    Vertex_handle v0 = cdt.insert(Point(-10, 10));
-    Vertex_handle v1 = cdt.insert(Point(10, 10));
-    Vertex_handle v2 = cdt.insert(Point(10, -10));
-    Vertex_handle v3 = cdt.insert(Point(-10, -10));
+    // Vertex_handle v0 = cdt.insert(Point_2(-10, 10));
+    // Vertex_handle v1 = cdt.insert(Point_2(10, 10));
+    // Vertex_handle v2 = cdt.insert(Point_2(10, -10));
+    // Vertex_handle v3 = cdt.insert(Point_2(-10, -10));
 
-    cdt.insert_constraint(v0, v1);
-    cdt.insert_constraint(v1, v2);
-    cdt.insert_constraint(v2, v3);
-    cdt.insert_constraint(v3, v0);
+    // cdt.insert_constraint(v0, v1);
+    // cdt.insert_constraint(v1, v2);
+    // cdt.insert_constraint(v2, v3);
+    // cdt.insert_constraint(v3, v0);
 
-    Vertex_handle v4 = cdt.insert(Point(-20, 20));
-    Vertex_handle v5 = cdt.insert(Point(20, 20));
-    Vertex_handle v6 = cdt.insert(Point(20, -20));
-    Vertex_handle v7 = cdt.insert(Point(-20, -20));
+    // Vertex_handle v4 = cdt.insert(Point_2(-20, 20));
+    // Vertex_handle v5 = cdt.insert(Point_2(20, 20));
+    // Vertex_handle v6 = cdt.insert(Point_2(20, -20));
+    // Vertex_handle v7 = cdt.insert(Point_2(-20, -20));
 
-    cdt.insert_constraint(v4, v5);
-    cdt.insert_constraint(v5, v6);
-    cdt.insert_constraint(v6, v7);
-    cdt.insert_constraint(v7, v4);
+    // cdt.insert_constraint(v4, v5);
+    // cdt.insert_constraint(v5, v6);
+    // cdt.insert_constraint(v6, v7);
+    // cdt.insert_constraint(v7, v4);
 
-    std::list<Point> list_of_seeds;
+    Vertex_handle a = cdt.insert(Point_2(0, 0));
+    Vertex_handle b = cdt.insert(Point_2(100, 0));
+    Vertex_handle c = cdt.insert(Point_2(100, 100));
+    Vertex_handle d = cdt.insert(Point_2(0, 100));
+    Vertex_handle e = cdt.insert(Point_2(50, 0));
+    Vertex_handle f = cdt.insert(Point_2(75, 75));
+    Vertex_handle g = cdt.insert(Point_2(25, 75));
 
-    list_of_seeds.push_back(Point(-19, 19));
-    CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::seeds(list_of_seeds));
+    // cdt.insert_constraint(a, b);
+    // cdt.insert_constraint(b, c);
+    // cdt.insert_constraint(c, d);
+    // cdt.insert_constraint(d, a);
+    // cdt.insert_constraint(e, f);
+    // cdt.insert_constraint(f, g);
+    // cdt.insert_constraint(g, e);
+
+    cdt.insert_constraint(a, e);
+    cdt.insert_constraint(e, g);
+    cdt.insert_constraint(g, f);
+    cdt.insert_constraint(f, e);
+    cdt.insert_constraint(e, b);
+    cdt.insert_constraint(b, c);
+    cdt.insert_constraint(c, d);
+    cdt.insert_constraint(d, a);
+
+    std::list<Point_2> list_of_seeds;
+    list_of_seeds.push_back(Point_2(50, 50));
+    CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::seeds(list_of_seeds).seeds_are_in_domain(false));
 
     std::vector<float> vertices;
+    for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); fit ++) {
+        if(fit->is_in_domain()) {
 
-    // for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); fit ++) {
-    //     if(fit->is_in_domain()) {
+            Point_2 p0 = fit->vertex(0)->point();
+            Point_2 p1 = fit->vertex(1)->point();
+            Point_2 p2 = fit->vertex(2)->point();
 
-    //         Point p0 = fit->vertex(0)->point();
-    //         Point p1 = fit->vertex(1)->point();
-    //         Point p2 = fit->vertex(2)->point();
+            pushPointToVetices(p0, vertices);
+            pushPointToVetices(p1, vertices);
 
-    //         pushPointToVetices(p0, vertices);
-    //         pushPointToVetices(p1, vertices);
+            pushPointToVetices(p1, vertices);
+            pushPointToVetices(p2, vertices);
 
-    //         pushPointToVetices(p1, vertices);
-    //         pushPointToVetices(p2, vertices);
-
-    //         pushPointToVetices(p2, vertices);
-    //         pushPointToVetices(p0, vertices);
-    //     }
-
-    // }
-    // batch->uploadStaticBuffer(_vectexBuffer0.get(),
-    //                           0,
-    //                           vertices.size() * sizeof(float),
-    //                           vertices.data());
-
-
-    GetFontOutline(0x6587, vertices);
+            pushPointToVetices(p2, vertices);
+            pushPointToVetices(p0, vertices);
+        }
+    }
     batch->uploadStaticBuffer(_vectexBuffer0.get(),
                               0,
                               vertices.size() * sizeof(float),
                               vertices.data());
+
+    // 绘制字符曲线
+    // GetFontOutline(0x6587, vertices);
+    // batch->uploadStaticBuffer(_vectexBuffer0.get(),
+    //                           0,
+    //                           vertices.size() * sizeof(float),
+    //                           vertices.data());
 
     // std::vector<float> indices;
     // int n = vertices.size()/3;
@@ -379,7 +405,7 @@ void TriangulationsRenderer::render(QRhiCommandBuffer *cb)
     // batch->uploadStaticBuffer(_indexBuffer0.get(), 0, indices.size(), indices.data());
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
     // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
     batch->uploadStaticBuffer(_modelBuffer0.get(), 0, sizeof(glm::mat4), &model);

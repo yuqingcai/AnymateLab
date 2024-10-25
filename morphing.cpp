@@ -1,24 +1,20 @@
-#include "squircles.h"
+#include "morphing.h".h"
 #include <QFile>
 #include <QtGui/qevent.h>
 #include <cstdio>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
-SquirclesRenderer::SquirclesRenderer()
+MorphingRenderer::MorphingRenderer()
 {
-    _model = new glm::mat4(1.0f);
 }
 
 
-SquirclesRenderer::~SquirclesRenderer()
+MorphingRenderer::~MorphingRenderer()
 {
-    if (_model) {
-        delete [] _model;
-    }
 }
 
-int SquirclesRenderer::createBuffer0()
+int MorphingRenderer::createBuffer0()
 {
     if (!_rhi)
         return -1;
@@ -43,7 +39,7 @@ int SquirclesRenderer::createBuffer0()
     return 0;
 }
 
-int SquirclesRenderer::createShaderResourceBinding0()
+int MorphingRenderer::createShaderResourceBinding0()
 {
 
     if (!_rhi)
@@ -71,7 +67,7 @@ int SquirclesRenderer::createShaderResourceBinding0()
     _srb0->create();
     return 0;
 }
-int SquirclesRenderer::createPipline0()
+int MorphingRenderer::createPipline0()
 {
     if (!_rhi || !_srb0)
         return -1;
@@ -115,9 +111,9 @@ int SquirclesRenderer::createPipline0()
     _pipeline0->setDepthTest(true);
     _pipeline0->setDepthWrite(true);
 
-    _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
+    // _pipeline0->setTopology(QRhiGraphicsPipeline::Lines);
     // _pipeline0->setTopology(QRhiGraphicsPipeline::LineStrip);
-    // _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
+    _pipeline0->setTopology(QRhiGraphicsPipeline::Triangles);
     QList<QRhiGraphicsPipeline::TargetBlend> targetBlends(1);
     targetBlends[0].enable = true;
     targetBlends[0].srcColor = QRhiGraphicsPipeline::SrcAlpha;
@@ -131,7 +127,7 @@ int SquirclesRenderer::createPipline0()
     return 0;
 }
 
-void SquirclesRenderer::initialize(QRhiCommandBuffer *cb)
+void MorphingRenderer::initialize(QRhiCommandBuffer *cb)
 {
 
     if (_rhi != rhi()) {
@@ -160,7 +156,7 @@ void SquirclesRenderer::initialize(QRhiCommandBuffer *cb)
     }
 }
 
-void SquirclesRenderer::pushPointToVetices(Point_2& p, std::vector<float>& vectices)
+void MorphingRenderer::pushPointToVetices(Point_2& p, std::vector<float>& vectices)
 {
     double x = CGAL::to_double(p.x());
     double y = CGAL::to_double(p.y());
@@ -169,8 +165,12 @@ void SquirclesRenderer::pushPointToVetices(Point_2& p, std::vector<float>& vecti
     vectices.push_back(0.0);
 }
 
-void SquirclesRenderer::render(QRhiCommandBuffer *cb)
+void MorphingRenderer::render(QRhiCommandBuffer *cb)
 {
+    if (!_updateMophing) {
+        // return;
+    }
+
     const QSize outputSize = renderTarget()->pixelSize();
     _projection = _rhi->clipSpaceCorrMatrix();
 
@@ -212,134 +212,149 @@ void SquirclesRenderer::render(QRhiCommandBuffer *cb)
                                sizeof(glm::vec4),
                                &lineColor);
 
-
-    std::vector<float> vertices;
-    std::vector<std::pair<double, double>> points;
-    double cx = 0.0, cy = 0.0, r = 50.0;
-    double step = 1.0;
-    double a = 50.0;
-    double b = 50.0;
-    double n = 5.0;
-    for (int i = 0; i < 90; ++i) {
-        double theta = i * M_PI / 180.0;
-        double x = a * pow(cos(theta), 2.0 / n);
-        double y = b * pow(sin(theta), 2.0 / n);
-        points.emplace_back(x, y);
-    }
-
-    CDT cdt;
-    std::vector<Vertex_handle> vs;
-
-    for (int i = 0; i < points.size(); i ++) {
-        Vertex_handle v = cdt.insert(Point_2(points[i].first, points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = points.size() - 1; i >= 0; i --) {
-        Vertex_handle v = cdt.insert(Point_2(-points[i].first, points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = 0; i < points.size(); i ++) {
-        Vertex_handle v = cdt.insert(Point_2(-points[i].first, -points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = points.size() - 1; i >= 0; i --) {
-        Vertex_handle v = cdt.insert(Point_2(points[i].first, -points[i].second));
-        vs.push_back(v);
-    }
-
-    for (int i = 0; i < vs.size(); i ++) {
-        if (i < vs.size() - 1) {
-            cdt.insert_constraint(vs[i], vs[i+1]);
+    offset = 0;
+    for (int i = 0; i < _shapes.size(); i ++) {
+        std::vector<glm::vec2>& vertices2D = _shapes[i]->getShapeVertices();
+        std::vector<glm::vec3> vertices;
+        for (glm::vec2 p : vertices2D) {
+            vertices.push_back(glm::vec3(p.x, p.y, 0.0));
         }
-        else {
-            cdt.insert_constraint(vs[i], vs[0]);
-        }
+        qint32 size = vertices.size() * sizeof(glm::vec3);
+        batch->uploadStaticBuffer(_vectexBuffer0.get(), offset, size, vertices.data());
+        offset += size;
+
+        glm::mat4 model = glm::mat4(1.0f);
+        // model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        batch->uploadStaticBuffer(_modelBuffer0.get(), i * sizeof(glm::mat4),
+                                  sizeof(glm::mat4), &model);
     }
-
-    std::list<Point_2> list_of_seeds;
-    CGAL::refine_Delaunay_mesh_2(cdt, CGAL::parameters::seeds(list_of_seeds));
-
-    for (auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); fit ++) {
-
-            if(fit->is_in_domain()) {
-
-            Point_2 p0 = fit->vertex(0)->point();
-            Point_2 p1 = fit->vertex(1)->point();
-            Point_2 p2 = fit->vertex(2)->point();
-
-
-            // pushPointToVetices(p0, vertices);
-            // pushPointToVetices(p1, vertices);
-            // pushPointToVetices(p2, vertices);
-
-            pushPointToVetices(p0, vertices);
-            pushPointToVetices(p1, vertices);
-            pushPointToVetices(p1, vertices);
-            pushPointToVetices(p2, vertices);
-            pushPointToVetices(p2, vertices);
-            pushPointToVetices(p0, vertices);
-        }
-
-    }
-    batch->uploadStaticBuffer(_vectexBuffer0.get(),
-                              0,
-                              vertices.size() * sizeof(float),
-                              vertices.data());
-
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, qDegreesToRadians(_angle), glm::vec3(0.0f, 1.0f, 0.0f));
-    // model = glm::scale(model, glm::vec3(_scale, _scale, _scale));
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    batch->uploadStaticBuffer(_modelBuffer0.get(), 0, sizeof(glm::mat4), &model);
 
     cb->resourceUpdate(batch);
 
-    // draw indexed
     cb->setGraphicsPipeline(_pipeline0.get());
     cb->setShaderResources(_srb0.get());
+    offset = 0;
+    for (int i = 0; i < _shapes.size(); i ++) {
+        std::vector<glm::vec2>& vertices = _shapes[i]->getShapeVertices();
+        const QRhiCommandBuffer::VertexInput inputBindings[] = {
+            { _vectexBuffer0.get(), offset },
+            { _modelBuffer0.get(), i * sizeof(glm::mat4) }
+        };
+        cb->setVertexInput(0, 2, inputBindings);
+        cb->draw(vertices.size());
+        offset += vertices.size() * sizeof(glm::vec3);
+    }
 
-    const QRhiCommandBuffer::VertexInput inputBindings[] = {
-        { _vectexBuffer0.get(), 0 },
-        { _modelBuffer0.get(), 0 }
-    };
-    cb->setVertexInput(0, 2, inputBindings, _indexBuffer0.get(), 0, QRhiCommandBuffer::IndexUInt32);
-    // cb->drawIndexed(sizeof(indices));
-    cb->draw(vertices.size()/3);
 
     cb->endPass();
+
 }
 
-void SquirclesRenderer::synchronize(QQuickRhiItem *rhiItem)
+void MorphingRenderer::synchronize(QQuickRhiItem *rhiItem)
 {
-    Squircles *item = static_cast<Squircles *>(rhiItem);
+    Morphing *item = static_cast<Morphing *>(rhiItem);
     if (item->angle() != _angle)
         _angle = item->angle();
 
-
-    if (item->scale() != _scale)
-        _scale = item->scale();
+    if (item->morphing() != _morphing) {
+        _morphing = item->morphing();
+        _updateMophing = true;
+    }
+    else {
+        _updateMophing = false;
+    }
 
     _orthoX = item->getOrthoX();
     _orthoY = item->getOrthoY();
     _zoom = item->getZoom();
     _focus = item->getFocus();
+
+    _shapes = item->getShapes();
+
 }
 
-Squircles::Squircles()
+Morphing::Morphing()
 {
+    Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
+
+    Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
+        glm::vec2(0, 0),
+        glm::vec2(0, 8),
+        glm::vec2(7, 8),
+        glm::vec2(7, 0),
+        glm::vec2(1, 4),
+        glm::vec2(2, 5),
+        glm::vec2(2, 4),
+        glm::vec2(1, 6),
+        glm::vec2(6, 6),
+
+        glm::vec2(4, 4),
+        glm::vec2(5, 3),
+        glm::vec2(5, 5),
+        glm::vec2(4, 4),
+
+        glm::vec2(-4, -4),
+        glm::vec2(0, -4),
+
+        glm::vec2(0, 0),
+
+    });
+    // Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
+    //     glm::vec2(0, 0),
+    //     glm::vec2(10, 0),
+    //     glm::vec2(10, 10),
+    //     glm::vec2(0, 10),
+    //     glm::vec2(0, 0),
+    // });
+
+
+    // Vangoh::Polygon* polygon1 = new Vangoh::Polygon({
+    //     glm::vec2(0, 0),
+    //     glm::vec2(50, 0),
+    //     glm::vec2(25, 75),
+    //     glm::vec2(50, 75),
+    //     glm::vec2(60, 70),
+    //     glm::vec2(40, 70),
+    //     glm::vec2(50, 75),
+    //     glm::vec2(75, 75),
+    //     glm::vec2(50, 0),
+    //     glm::vec2(100, 0),
+    //     glm::vec2(100, 100),
+    //     glm::vec2(0, 100),
+    //     glm::vec2(0, 0),
+    // });
+
+    polygon1->setPen(pen0);
+    polygon1->createVertices();
+    _shapes.push_back(polygon1);
+
 }
 
-Squircles:: ~ Squircles()
+Morphing:: ~ Morphing()
 {
-
+    for (auto ptr : _shapes) {
+        delete ptr;
+    }
+    _shapes.clear();
 }
 
-QQuickRhiItemRenderer* Squircles::createRenderer()
+QQuickRhiItemRenderer* Morphing::createRenderer()
 {
-    return new SquirclesRenderer();
+    return new MorphingRenderer();
 }
 
+int Morphing::morphing() const
+{
+    return _morphing;
+}
+
+void Morphing::setMorphing(int morphing)
+{
+    _morphing = morphing;
+}
+
+std::vector<Vangoh::Shape*>& Morphing::getShapes()
+{
+    return _shapes;
+}

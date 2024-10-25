@@ -5,6 +5,29 @@
 #include <QQuickRhiItem>
 #include <rhi/qrhi.h>
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Triangulation_2.h>
+#include <CGAL/Triangulation_conformer_2.h>
+#include <CGAL/lloyd_optimize_mesh_2.h>
+#include <CGAL/Arr_segment_traits_2.h>
+#include <CGAL/Arrangement_2.h>
+#include <CGAL/Polygon_2.h>
+
+typedef CGAL::Exact_predicates_exact_constructions_kernel Kernal;
+typedef CGAL::Triangulation_vertex_base_2<Kernal> Vb;
+typedef CGAL::Delaunay_mesh_face_base_2<Kernal> Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+typedef CGAL::Constrained_Delaunay_triangulation_2<Kernal, Tds> CDT;
+typedef CDT::Vertex_handle Vertex_handle;
+typedef CDT::Point_2 Point_2;
+typedef Kernal::Vector_2 Vector_2;
+typedef CGAL::Polygon_2<Kernal> Polygon_2;
+
+
 #define STD140_ALIGN_INT   4
 #define STD140_ALIGN_FLOAT 4
 #define STD140_ALIGN_VEC2  8

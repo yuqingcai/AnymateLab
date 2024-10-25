@@ -1,16 +1,17 @@
-#ifndef TRIANGULATIONS_H
-#define TRIANGULATIONS_H
+#ifndef MORPHING_H
+#define MORPHING_H
 
+#include "graphic.h"
 #include "sampleitem.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class TriangulationsRenderer: public QQuickRhiItemRenderer
+class MorphingRenderer: public QQuickRhiItemRenderer
 {
 public:
-    TriangulationsRenderer();
-    ~TriangulationsRenderer();
+    MorphingRenderer();
+    ~MorphingRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
@@ -34,8 +35,6 @@ private:
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
-    glm::mat4* _model;
-
 
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
@@ -46,26 +45,36 @@ private:
         QRhiShaderResourceBinding::ComputeStage;
 
     float _angle = 0.0f;
-    float _scale = 1.0f;
+    int _morphing = 0;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
     QPointF _focus = {0.0f, 0.0f};
+    bool _updateMophing = false;
+
+    std::vector<Vangoh::Shape*> _shapes;
 };
 
-class Triangulations: public SampleItem
+class Morphing: public SampleItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Triangulations)
+    QML_NAMED_ELEMENT(Morphing)
+    Q_PROPERTY(int morphing READ morphing WRITE setMorphing NOTIFY morphingChanged)
 
 public:
-    Triangulations();
-    virtual ~ Triangulations();
+    Morphing();
+    virtual ~ Morphing();
     QQuickRhiItemRenderer *createRenderer() override;
-
+    int morphing() const;
+    void setMorphing(int morphing);
+    std::vector<Vangoh::Shape*>& getShapes();
 
 private:
+    int _morphing = 0;
+    std::vector<Vangoh::Shape*> _shapes;
 
+Q_SIGNALS:
+    void morphingChanged();
 };
 
-#endif // TRIANGULATIONS_H
+#endif // MORPHING_H

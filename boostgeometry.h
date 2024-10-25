@@ -1,16 +1,16 @@
-#ifndef TRIANGULATIONS_H
-#define TRIANGULATIONS_H
+#ifndef BOOSTGEOMETRY_H
+#define BOOSTGEOMETRY_H
 
 #include "sampleitem.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class TriangulationsRenderer: public QQuickRhiItemRenderer
+class BoostGeometryRenderer: public QQuickRhiItemRenderer
 {
 public:
-    TriangulationsRenderer();
-    ~TriangulationsRenderer();
+    BoostGeometryRenderer();
+    ~BoostGeometryRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
@@ -34,8 +34,6 @@ private:
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
-    glm::mat4* _model;
-
 
     static constexpr auto m_shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
@@ -46,26 +44,28 @@ private:
         QRhiShaderResourceBinding::ComputeStage;
 
     float _angle = 0.0f;
-    float _scale = 1.0f;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
     QPointF _focus = {0.0f, 0.0f};
+
+    // std::vector<Vangoh::Shape*> _shapes;
 };
 
-class Triangulations: public SampleItem
+class BoostGeometry: public SampleItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Triangulations)
+    QML_NAMED_ELEMENT(BoostGeometry)
 
 public:
-    Triangulations();
-    virtual ~ Triangulations();
+    BoostGeometry();
+    virtual ~ BoostGeometry();
     QQuickRhiItemRenderer *createRenderer() override;
-
+    // std::vector<Vangoh::Shape*>& getShapes();
 
 private:
+    // std::vector<Vangoh::Shape*> _shapes;
 
 };
 
-#endif // TRIANGULATIONS_H
+#endif // BOOSTGEOMETRY_H

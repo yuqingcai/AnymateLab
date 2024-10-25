@@ -40,7 +40,11 @@ enum VertexType {
     BorderVertex,
 };
 
-const float outlinePrecision = 1.0;
+enum CapPosition {
+    HeadCap,
+    TailCap,
+};
+
 const float defaultPenWidth = 1;
 
 }
