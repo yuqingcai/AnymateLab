@@ -5,6 +5,7 @@
 #include <cassert>
 #include <glm/gtc/matrix_transform.hpp>
 #include <variant>
+#include <chrono>
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
@@ -79,7 +80,13 @@ void Shape::createVertices()
 {
     createOutline();
     createOutlineVertices();
+
+    auto start = std::chrono::high_resolution_clock::now();
     createShapeVertices();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "createShapeVertices spend: " << duration.count() << " ms" << std::endl;
 }
 
 void Shape::createOutlineVertices()
@@ -103,14 +110,19 @@ std::vector<Segment_2> segmentsInPolygon(Polygon_2& polygon)
     return segments;
 }
 
-bool segmentIsCommoned(Segment_2& segment, std::vector<Polygon_2>& polygons)
+bool segmentIsCommoned(Segment_2& segment0, Segment_2& segment1)
+{
+    return (segment0.source() == segment1.source() && segment0.target() == segment1.target() ||
+            segment0.source() == segment1.target() && segment0.target() == segment1.source());
+}
+
+bool segmentIsCommonedInPolygons(Segment_2& segment, std::vector<Polygon_2>& polygons)
 {
     int n = 0;
     for (auto& polygon : polygons) {
         std::vector<Segment_2> segments = segmentsInPolygon(polygon);
         for (auto& target : segments) {
-            if (segment.source() == target.source() && segment.target() == target.target() ||
-                segment.source() == target.target() && segment.target() == target.source()) {
+            if (segmentIsCommoned(segment, target)) {
                 n ++;
             }
         }
@@ -178,7 +190,7 @@ bool rayIntersectWithPolygon(Ray& ray, Polygon_2& polygon)
     return false;
 }
 
-bool polygonCompleteContain(Polygon_2& container, Polygon_2& target)
+bool polygonContain(Polygon_2& container, Polygon_2& target)
 {
     for (auto& p : target.vertices()) {
         auto result = CGAL::bounded_side_2(container.vertices_begin(),
@@ -191,6 +203,22 @@ bool polygonCompleteContain(Polygon_2& container, Polygon_2& target)
         }
     }
     return true;
+}
+
+bool polygonsWithCommonedSegment(Polygon_2& polygon0, Polygon_2& polygon1)
+{
+    std::vector<Segment_2> segments0 = segmentsInPolygon(polygon0);
+    std::vector<Segment_2> segments1 = segmentsInPolygon(polygon1);
+
+    for (auto& segment0 : segments0) {
+        for (auto& segment1 : segments1) {
+            if (segmentIsCommoned(segment0, segment1)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 std::vector<glm::vec2> triangulation(Polygon_2& polygon,
@@ -253,6 +281,34 @@ std::vector<glm::vec2> triangulation(Polygon_2& polygon,
     return vertices;
 }
 
+
+std::vector<glm::vec2> shapeLines(Polygon_2& polygon)
+{
+    std::vector<glm::vec2> vertices;
+    int n = polygon.vertices().size();
+
+    for (int i = 0; i < n; i ++) {
+        int j = i + 1;
+        if (i == n - 1)
+            j = 0;
+
+        double xi, yi, xj, yj;
+        K::Point_2 pi = polygon.vertex(i);
+        K::Point_2 pj = polygon.vertex(j);
+
+        xi = CGAL::to_double(pi.x());
+        yi = CGAL::to_double(pi.y());
+
+        xj = CGAL::to_double(pj.x());
+        yj = CGAL::to_double(pj.y());
+
+        vertices.push_back(glm::vec2(xi, yi));
+        vertices.push_back(glm::vec2(xj, yj));
+    }
+
+    return vertices;
+}
+
 K::Point_2 fineTuning(K::Point_2 p0, K::Point_2 p1)
 {
     K::Vector_2 v = K::Vector_2(p1 - p0);
@@ -289,10 +345,10 @@ void regularPoints(std::vector<K::Point_2>& points)
         for (Segment_2& segment : segments) {
 
             if (segmentsOverlap(test, segment)) {
-                std::cout << "segment overlap: ";
+                // std::cout << "segment overlap: ";
 
-                std::cout << test.source() << "," << test.target() << "->"
-                          << segment.source() << "," << segment.target() << std::endl;
+                // std::cout << test.source() << "," << test.target() << "->"
+                          // << segment.source() << "," << segment.target() << std::endl;
 
                 // first and last points has same position in a closed path,
                 // tunning p0
@@ -302,12 +358,12 @@ void regularPoints(std::vector<K::Point_2>& points)
 
                 K::Point_2 tunning = fineTuning(points[i], points[j]);
 
-                std::cout << "fineTuning:" << points[j] << "->" << tunning << std::endl;
+                // std::cout << "fineTuning:" << points[j] << "->" << tunning << std::endl;
 
                 points[j] = tunning;
 
                 if (tunningP0) {
-                    std::cout << "tuning point[0]:" << points[0] << "->" << tunning << std::endl;
+                    // std::cout << "tuning point[0]:" << points[0] << "->" << tunning << std::endl;
                     points[0] = points[j];
                 }
             }
@@ -329,13 +385,13 @@ void Shape::createShapeVertices()
         glm::vec2& pos = p.getPosition();
         points.push_back(K::Point_2(pos.x, pos.y));
     }
+
     regularPoints(points);
 
     std::vector<Traits_2::Point_2> traitPoints;
     for (K::Point_2& p : points) {
         traitPoints.push_back(Traits_2::Point_2(p.x(), p.y()));
     }
-
 
     // put segment to arrangement
     std::vector<Traits_2::Segment_2> segments;
@@ -362,10 +418,8 @@ void Shape::createShapeVertices()
         }
     }
 
-
     std::vector<Polygon_2> odds;
-    std::vector<Polygon_2> events;
-    // pushPolygonVertices(faces[2], _shapeVertices);
+    std::vector<Polygon_2> evens;
 
     int i = 0;
     int n = faces.size();
@@ -376,13 +430,14 @@ void Shape::createShapeVertices()
         Ray ray = rayFromPolygon(faces[i], delta);
         float sum = 0.0;
 
-        for (auto& testFace : faces) {
+        for (auto& face : faces) {
 
-            std::vector<Segment_2> testSegments = segmentsInPolygon(testFace);
+            std::vector<Segment_2> segments = segmentsInPolygon(face);
 
-            for (Segment_2& testSegment : testSegments) {
+            for (Segment_2& segment : segments) {
+
                 std::optional<std::variant<K::Point_2, Segment_2>>
-                    result = CGAL::intersection(ray, testSegment);
+                    result = CGAL::intersection(ray, segment);
 
                 if (result) {
 
@@ -390,12 +445,12 @@ void Shape::createShapeVertices()
 
                         K::Point_2 p = std::get<K::Point_2>(*result);
 
-                        if (pointIsVertexInPolygon(p, testFace)) {
+                        if (pointIsVertexInPolygon(p, face)) {
                             delta += 0.1;
                             testSuccess = false;
                             break;
                         }
-                        else if (segmentIsCommoned(testSegment, faces)) {
+                        else if (segmentIsCommonedInPolygons(segment, faces)) {
                             sum += 0.5;
                         }
                         else {
@@ -423,7 +478,7 @@ void Shape::createShapeVertices()
                 odds.push_back(faces[i]);
             }
             else {
-                events.push_back(faces[i]);
+                evens.push_back(faces[i]);
             }
             i ++;
             delta = 0.0;
@@ -431,17 +486,33 @@ void Shape::createShapeVertices()
     }
 
     for (auto& odd : odds) {
+
+        ////////////////////////////////////////////////////////////////////////
+        // consider again...
+        // discard when the polygon area is too small
+        double area = CGAL::to_double(odd.area());
+        if (area < 0.1) {
+            continue;
+        }
+        ////////////////////////////////////////////////////////////////////////
+
         std::list<K::Point_2> seeds;
-        for (auto& event : events) {
-            K::Point_2 seed = getPointFromPolygon(event);
-            seeds.push_back(seed);
+        for (auto& even : evens) {
+            if (polygonsWithCommonedSegment(odd, even)) {
+                K::Point_2 seed = getPointFromPolygon(even);
+                seeds.push_back(seed);
+            }
         }
 
-        std::vector<glm::vec2> vectices = triangulation(odd, seeds);
+        std::vector<glm::vec2> vectices;
+        vectices = triangulation(odd, seeds);
         _shapeVertices.insert(_shapeVertices.end(),
                               vectices.begin(), vectices.end());
     }
 
+    // std::vector<glm::vec2> vectices = shapeLines(faces[7]);
+    // _shapeVertices.insert(_shapeVertices.end(),
+    //                       vectices.begin(), vectices.end());
 }
 
 Polygon::Polygon()

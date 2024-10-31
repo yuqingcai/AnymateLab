@@ -20,7 +20,11 @@ private:
     int createBuffer0();
     int createShaderResourceBinding0();
     int createPipline0();
-    void pushPointToVetices(Point_2& p, std::vector<float>& vectices);
+
+    int createBuffer1();
+    int createShaderResourceBinding1();
+    int createPipline1();
+
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;
@@ -32,6 +36,16 @@ private:
     std::unique_ptr<QRhiBuffer> _vectexBuffer0;
     std::unique_ptr<QRhiBuffer> _indexBuffer0;
     std::unique_ptr<QRhiBuffer> _modelBuffer0;
+
+
+    std::unique_ptr<QRhiGraphicsPipeline> _pipeline1;
+    std::unique_ptr<QRhiShaderResourceBindings> _srb1;
+    std::unique_ptr<QRhiBuffer> _uniformBuffer1;
+    std::unique_ptr<QRhiBuffer> _vectexBuffer1;
+    std::unique_ptr<QRhiBuffer> _indexBuffer1;
+    std::unique_ptr<QRhiBuffer> _modelBuffer1;
+
+
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
@@ -75,6 +89,54 @@ private:
 
 Q_SIGNALS:
     void morphingChanged();
+};
+
+
+class WorkerThread : public QThread {
+    Q_OBJECT
+
+public:
+    explicit WorkerThread(QObject *parent = nullptr) : QThread(parent) {}
+    ~WorkerThread() override {}
+
+Q_SIGNALS:
+    void resultReady();
+
+protected:
+    void run() override {
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < 100; i ++) {
+            Vangoh::Pen pen0(Vangoh::SolidLine, Vangoh::FlatCap, Vangoh::RoundJoin, 2);
+            Vangoh::Polygon* polygon = new Vangoh::Polygon({
+                glm::vec2(0, 0),
+                glm::vec2(0, 80),
+                glm::vec2(70, 80),
+                glm::vec2(70, 0),
+                glm::vec2(10, 40),
+                glm::vec2(20, 50),
+                glm::vec2(20, 40),
+                glm::vec2(10, 60),
+                glm::vec2(60, 60),
+
+                glm::vec2(40, 40),
+                glm::vec2(50, 50),
+                glm::vec2(50, 30),
+                glm::vec2(40, 40),
+
+                glm::vec2(0, 0),
+
+            });
+            polygon->setPen(pen0);
+            polygon->createVertices();
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "create polygon x100 spend: " << duration.count() << " ms" << std::endl;
+        Q_EMIT resultReady();
+    }
 };
 
 #endif // MORPHING_H

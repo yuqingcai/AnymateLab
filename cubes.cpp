@@ -12,7 +12,7 @@
 static const QSize TEXTURE_SIZE(512, 512);
 
 
-float vertexCube[] = {
+static float vertexCube[] = {
     //---- Position------       -----Color-----
     // X       Y       Z        R     G     B
 
@@ -60,7 +60,7 @@ float vertexCube[] = {
    -100.0f,  100.0f, -100.0f,   1.0f, 0.0f, 1.0f,
 };
 
-float vertexPyramid[] = {
+static float vertexPyramid[] = {
 
     //---- Position------      -----Color-----
     // X       Y       Z       R     G     B
@@ -92,7 +92,7 @@ float vertexPyramid[] = {
 };
 
 
-float vertexShape[] = {
+static float vertexShape[] = {
     //---- Position------      -----Color-----
     // X       Y       Z       R     G     B
    -100.0f,  -100.0f,  100.0f,   1.0f, 0.0f, 0.0f,
@@ -104,7 +104,7 @@ float vertexShape[] = {
 };
 
 
-float vertexRect[] = {
+static float vertexRect[] = {
     //---- Position------       -----Color-----     ---UV----
     // X       Y       Z        R     G     B       U    V
    -100.0f,  -100.0f,  0.0f,   1.0f, 0.0f, 0.0f,    0.0, 0.0,
@@ -600,7 +600,7 @@ void CubesRenderer::initialize(QRhiCommandBuffer *cb)
 {
     if (m_rhi != rhi()) {
         m_rhi = rhi();
-        ShowFreatures(m_rhi);
+        // ShowFreatures(m_rhi);
 
         createCubeBuffer();
         createPyramidBuffer();
@@ -613,6 +613,8 @@ void CubesRenderer::initialize(QRhiCommandBuffer *cb)
         m_pipeline4.reset();
 
     }
+
+    ShowFreatures(m_rhi);
 
     if (m_sampleCount != renderTarget()->sampleCount()) {
         m_sampleCount = renderTarget()->sampleCount();

@@ -203,7 +203,6 @@ ApplicationWindow {
             //     }
             // }
 
-
             // Squircles{
             //     SplitView.fillWidth: true
             //     SplitView.fillHeight: true
@@ -254,32 +253,7 @@ ApplicationWindow {
             //     }
             // }
 
-            Morphing {
-                SplitView.fillWidth: true
-                SplitView.fillHeight: true
-                sampleCount: 4 // normal MSAA, 8: high MSAA
-                // colorBufferFormat:RGBA8
-                mirrorVertically: false
-                // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
-                // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
-                alphaBlending: true
-                NumberAnimation on angle {
-                    from: 0
-                    to: 360
-                    duration: 12000
-                    loops: Animation.Infinite
-                    running:true
-                }
-                NumberAnimation on morphing {
-                    from: 0
-                    to: 99
-                    duration: 6000
-                    loops: Animation.Infinite
-                    running:true
-                }
-            }
-
-            // BoostGeometry {
+            // Morphing {
             //     SplitView.fillWidth: true
             //     SplitView.fillHeight: true
             //     sampleCount: 4 // normal MSAA, 8: high MSAA
@@ -295,7 +269,32 @@ ApplicationWindow {
             //         loops: Animation.Infinite
             //         running:true
             //     }
+            //     NumberAnimation on morphing {
+            //         from: 0
+            //         to: 99
+            //         duration: 6000
+            //         loops: Animation.Infinite
+            //         running:true
+            //     }
             // }
+
+            Texture {
+                SplitView.fillWidth: true
+                SplitView.fillHeight: true
+                sampleCount: 4 // normal MSAA, 8: high MSAA
+                // colorBufferFormat:RGBA8
+                mirrorVertically: false
+                // fixedColorBufferWidth: cbSize.checked ? slSize.value.toFixed(0) : 0
+                // fixedColorBufferHeight: cbSize.checked ? slSize.value.toFixed(0) : 0
+                alphaBlending: true
+                NumberAnimation on angle {
+                    from: 0
+                    to: 360
+                    duration: 12000
+                    loops: Animation.Infinite
+                    running:true
+                }
+            }
 
             // Stage {
             //     SplitView.fillWidth: true

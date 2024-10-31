@@ -386,6 +386,7 @@ void CurveRenderer::initialize(QRhiCommandBuffer *cb)
         _pipeline0.reset();
         _pipeline1.reset();
         _pipeline2.reset();
+
     }
 
     if (_sampleCount != renderTarget()->sampleCount()) {

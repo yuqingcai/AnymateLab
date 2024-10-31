@@ -1,25 +1,25 @@
-#ifndef BOOSTGEOMETRY_H
-#define BOOSTGEOMETRY_H
+#ifndef TEXTURE_H
+#define TEXTURE_H
 
 #include "sampleitem.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class BoostGeometryRenderer: public QQuickRhiItemRenderer
+
+class TextureRenderer : public QQuickRhiItemRenderer
 {
 public:
-    BoostGeometryRenderer();
-    ~BoostGeometryRenderer();
+    TextureRenderer();
+    ~TextureRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
 
 private:
     int createBuffer0();
-    int createShaderResourceBinding0();
     int createPipline0();
-    void pushPointToVetices(Point_2& p, std::vector<float>& vectices);
+    void crateTextureImage();
 
     QRhi *_rhi = nullptr;
     int _sampleCount = 4;
@@ -29,43 +29,41 @@ private:
     std::unique_ptr<QRhiShaderResourceBindings> _srb0;
     std::unique_ptr<QRhiBuffer> _uniformBuffer0;
     std::unique_ptr<QRhiBuffer> _vectexBuffer0;
-    std::unique_ptr<QRhiBuffer> _indexBuffer0;
     std::unique_ptr<QRhiBuffer> _modelBuffer0;
+    std::unique_ptr<QRhiSampler> _sampler;
+    std::unique_ptr<QRhiTexture> _texture;
+    QImage _textureImage;
 
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
+    int _rects;
 
-    static constexpr auto m_shaderResourceStages =
+    int _uniformBufferBlockCount = 1;
+    static constexpr auto _shaderResourceStages =
         QRhiShaderResourceBinding::VertexStage |
-        QRhiShaderResourceBinding::GeometryStage |
         QRhiShaderResourceBinding::FragmentStage |
         QRhiShaderResourceBinding::TessellationControlStage |
         QRhiShaderResourceBinding::TessellationEvaluationStage |
-        QRhiShaderResourceBinding::ComputeStage;
+        QRhiShaderResourceBinding::ComputeStage |
+        QRhiShaderResourceBinding::GeometryStage;
 
     float _angle = 0.0f;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
     QPointF _focus = {0.0f, 0.0f};
-
-    // std::vector<Vangoh::Shape*> _shapes;
 };
 
-class BoostGeometry: public SampleItem
+class Texture: public SampleItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(BoostGeometry)
+    QML_NAMED_ELEMENT(Texture)
 
 public:
-    BoostGeometry();
-    virtual ~ BoostGeometry();
+    Texture();
+    ~ Texture();
     QQuickRhiItemRenderer *createRenderer() override;
-    // std::vector<Vangoh::Shape*>& getShapes();
 
 private:
-    // std::vector<Vangoh::Shape*> _shapes;
-
 };
-
-#endif // BOOSTGEOMETRY_H
+#endif // TEXTURE_H

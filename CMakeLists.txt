@@ -7,18 +7,23 @@ add_compile_definitions(QT_NO_KEYWORDS)
 
 add_definitions(-DANYMATE_DEBUG)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools)
 
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_resources(RESOURCES resources.qrc)
+
+include_directories(/usr/local/include)
+include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
+include_directories(/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13)
+include_directories(/opt/homebrew/include/freetype2)
+
+link_directories(/usr/local/lib)
 
 qt_add_executable(appAnymateLab
     main.cpp
     features.cpp
     features.h
-    texturerenderer.h
-    texturerenderer.cpp
     graphic.h
     graphic.cpp
     color.h
@@ -28,8 +33,6 @@ qt_add_executable(appAnymateLab
     vangohnamespace.h
     outline2D.h
     outline2D.cpp
-    # vertexgenerator.h
-    # vertexgenerator.cpp
     tools.h
     tools.cpp
     ${RESOURCES}
@@ -50,7 +53,7 @@ qt_add_qml_module(appAnymateLab
         SOURCES sampleitem.cpp sampleitem.h
         SOURCES arrangements2d.cpp arrangements2d.h
         SOURCES morphing.cpp morphing.h
-        SOURCES boostgeometry.cpp boostgeometry.h
+        SOURCES texture.cpp texture.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -81,6 +84,10 @@ install(TARGETS appAnymateLab
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/lib/python3.13/config-3.13-darwin/libpython3.13.dylib)
+target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/lib/libfreetype.dylib)
+# target_link_libraries(appAnymateLab PRIVATE "-framework CoreFoundation")
 
 qt_add_shaders(appAnymateLab "appAnymateLab_cube_shaders"
     PREFIX
@@ -130,9 +137,5 @@ qt_add_shaders(appAnymateLab "appAnymateLab_color_shaders"
         shaders/color.frag
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
-include_directories(/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13)
-include_directories(/opt/homebrew/include/freetype2)
-target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/lib/python3.13/config-3.13-darwin/libpython3.13.dylib)
-target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/lib/libfreetype.dylib)
-# target_link_libraries(appAnymateLab PRIVATE "-framework CoreFoundation")
+
+
