@@ -746,16 +746,16 @@ Curve::Curve()
     // squircles->createVertices();
     // _shapes.push_back(squircles);
 
-    Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
-    Vangoh::BezierCurve* bezierCurve = new Vangoh::BezierCurve(
-        glm::vec2(0.0, 0.0),
-        glm::vec2(200.0, 200.0),
-        glm::vec2(0, 200.0),
-        glm::vec2(80, 0.0)
-    );
-    bezierCurve->setPen(pen1);
-    bezierCurve->createVertices();
-    _shapes.push_back(bezierCurve);
+    // Vangoh::Pen pen1(Vangoh::SolidLine, Vangoh::RoundCap, Vangoh::RoundJoin, 2);
+    // Vangoh::BezierCurve* bezierCurve = new Vangoh::BezierCurve(
+    //     glm::vec2(0.0, 0.0),
+    //     glm::vec2(200.0, 200.0),
+    //     glm::vec2(0, 200.0),
+    //     glm::vec2(80, 0.0)
+    // );
+    // bezierCurve->setPen(pen1);
+    // bezierCurve->createVertices();
+    // _shapes.push_back(bezierCurve);
 
 }
 

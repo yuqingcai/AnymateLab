@@ -15,8 +15,8 @@ qt_add_resources(RESOURCES resources.qrc)
 
 include_directories(/usr/local/include)
 include_directories(${CMAKE_SOURCE_DIR}/3rdParty/include)
-include_directories(/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13)
-include_directories(/opt/homebrew/include/freetype2)
+# include_directories(/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/include/python3.13)
+# include_directories(/opt/homebrew/include/freetype2)
 
 link_directories(/usr/local/lib)
 
@@ -52,8 +52,9 @@ qt_add_qml_module(appAnymateLab
         SOURCES squircles.cpp squircles.h
         SOURCES sampleitem.cpp sampleitem.h
         SOURCES arrangements2d.cpp arrangements2d.h
-        SOURCES morphing.cpp morphing.h
+        SOURCES polygon.cpp polygon.h
         SOURCES texture.cpp texture.h
+        SOURCES drawer.cpp drawer.h
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -85,8 +86,8 @@ install(TARGETS appAnymateLab
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/lib/python3.13/config-3.13-darwin/libpython3.13.dylib)
-target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/lib/libfreetype.dylib)
+# target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/lib/python3.13/config-3.13-darwin/libpython3.13.dylib)
+# target_link_libraries(appAnymateLab PRIVATE /opt/homebrew/lib/libfreetype.dylib)
 # target_link_libraries(appAnymateLab PRIVATE "-framework CoreFoundation")
 
 qt_add_shaders(appAnymateLab "appAnymateLab_cube_shaders"

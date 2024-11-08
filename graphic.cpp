@@ -81,12 +81,12 @@ void Shape::createVertices()
     createOutline();
     createOutlineVertices();
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     createShapeVertices();
 
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "createShapeVertices spend: " << duration.count() << " ms" << std::endl;
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // std::cout << "createShapeVertices spend: " << duration.count() << " ms" << std::endl;
 }
 
 void Shape::createOutlineVertices()
@@ -520,19 +520,19 @@ Polygon::Polygon()
 
 }
 
-Polygon::Polygon(std::initializer_list<glm::vec2> list)
+Polygon::Polygon(std::initializer_list<glm::vec2> points)
 {
-    if (!list.size())
+    if (!points.size())
         return;
 
-    assert(list.size() >= 3);
+    assert(points.size() >= 3);
 
-    if (list.size() < 3) {
+    if (points.size() < 3) {
         fprintf(stderr, "Polygon should at least contains 3 points\n");
         return;
     }
 
-    for (glm::vec2 p : list) {
+    for (glm::vec2 p : points) {
         _points.push_back(p);
     }
 
@@ -540,19 +540,19 @@ Polygon::Polygon(std::initializer_list<glm::vec2> list)
 
 }
 
-Polygon::Polygon(std::vector<glm::vec2> list)
+Polygon::Polygon(std::vector<glm::vec2> points)
 {
-    if (!list.size())
+    if (!points.size())
         return;
 
-    assert(list.size() >= 3);
+    assert(points.size() >= 3);
 
-    if (list.size() < 3) {
+    if (points.size() < 3) {
         fprintf(stderr, "Polygon should at least contains 3 points\n");
         return;
     }
 
-    for (glm::vec2 p : list) {
+    for (glm::vec2 p : points) {
         _points.push_back(p);
     }
 
@@ -587,49 +587,7 @@ void Polygon::createOutline()
         _outline.getPoints().back().setCuspPoint(true);
         i ++;
     }
-
 }
-
-Line::Line(glm::vec2 p0, glm::vec2 p1)
-    :
-    _endPoint0(p0),
-    _endPoint1(p1)
-{
-
-}
-
-Line::~Line()
-{
-
-}
-
-void Line::createOutline()
-{
-    _outline.reset();
-    float precision = 20.0;
-    // outline just need 2D points;
-    glm::vec2 p0 = _endPoint0;
-    glm::vec2 p1 = _endPoint1;
-    float distance = glm::distance(p0, p1);
-    glm::vec2 p = p0;
-
-    _outline.appendPosition(p0);
-
-    while (true) {
-        p = pointRelateTo(p, p1, precision);
-        float distanceP = glm::distance(p0, p);
-        if (distanceP < distance) {
-            _outline.appendPosition(p);
-        }
-        else if (fabs(distanceP - distance) < FLT_EPSILON ||
-                distanceP > distance) {
-            _outline.appendPosition(p1);
-            break;
-        }
-    }
-
-}
-
 
 Squircles::Squircles(glm::vec2 center, float ra, float rb, float n)
     :
@@ -678,22 +636,19 @@ void Squircles::createOutline()
     }
 }
 
-BezierCurve::BezierCurve(glm::vec2 p0, glm::vec2 p1,
-            glm::vec2 p2, glm::vec2 p3)
-    :
-    _point0(p0),
-    _point1(p1),
-    _point2(p2),
-    _point3(p3)
-{
 
+BezierCurve::BezierCurve(glm::vec2 point0, glm::vec2 point1,
+                         glm::vec2 point2, glm::vec2 point3)
+    : _point0(point0),
+    _point1(point1),
+    _point2(point2),
+    _point3(point3)
+{
 }
 
-BezierCurve::~ BezierCurve()
+BezierCurve::~BezierCurve()
 {
-
 }
-
 
 glm::vec2 BezierCurve::interp(float t)
 {
@@ -704,67 +659,162 @@ glm::vec2 BezierCurve::interp(float t)
            _point3 * (t * t * t);
 }
 
-
-glm::vec2 BezierCurve::derivative(float t)
-{
-    float u = 1 - t;
-    return (_point1 - _point0) * (3 * u * u) +
-           (_point2 - _point1) * (6 * u * t) +
-           (_point3 - _point2) * (3 * t * t);
-}
-
-float BezierCurve::arcLength(float t0, float t1, int segments) {
-    float length = 0.0f;
-    float dt = (t1 - t0) / segments;
-
-    for (int i = 0; i < segments; ++i) {
-        float t_start = t0 + i * dt;
-        float t_end = t0 + (i + 1) * dt;
-        glm::vec2 p_start = derivative(t_start);
-        glm::vec2 p_end = derivative(t_end);
-        length += 0.5f * (glm::length(p_start) + glm::length(p_end)) * dt;
-    }
-
-    return length;
-}
-
-float BezierCurve::findTForArcLength(float targetLength, int segments) {
-    float t_low = 0.0f;
-    float t_high = 1.0f;
-    float currentLength = 0.0f;
-
-    while (t_high - t_low > 1e-5f) {
-        float t_mid = (t_low + t_high) / 2.0f;
-        currentLength = arcLength(0, t_mid, segments);
-
-        if (currentLength < targetLength) {
-            t_low = t_mid;
-        } else {
-            t_high = t_mid;
-        }
-    }
-
-    return (t_low + t_high) / 2.0f;
-}
-
 void BezierCurve::createOutline()
 {
-    // float totalLength = arcLength(0.0, 1.0);
-    // int steps = static_cast<int>(std::ceil(totalLength))/2;
-    // for (int i = 0; i <= steps; i ++) {
-    //     float targetLength = (totalLength / steps) * i;
-    //     float t = findTForArcLength(targetLength, 10);
-    //     glm::vec2 p = interp(t);
-    //     _outline.appendPosition(p);
-    // }
-
+    _outline.reset();
     int samples = 100;
-    for (int i = 0; i <= samples; ++i) {
+    for (int i = 0; i <= samples; ++i)
+    {
         float t = static_cast<float>(i) / samples;
         glm::vec2 p = interp(t);
         _outline.appendPosition(p);
     }
 }
 
+
+glm::vec2& BezierCurve::getPoint0()
+{
+    return _point0;
+}
+
+glm::vec2& BezierCurve::getPoint1()
+{
+    return _point1;
+}
+
+glm::vec2& BezierCurve::getPoint2()
+{
+    return _point2;
+}
+
+glm::vec2& BezierCurve::getPoint3()
+{
+    return _point3;
+}
+
+void BezierCurve::setPoint0(glm::vec2& point0)
+{
+    _point0 = point0;
+    createOutline();
+    createOutlineVertices();
+}
+
+void BezierCurve::setPoint1(glm::vec2& point1)
+{
+    _point1 = point1;
+    createOutline();
+    createOutlineVertices();
+}
+
+void BezierCurve::setPoint2(glm::vec2& point2)
+{
+    _point2 = point2;
+    createOutline();
+    createOutlineVertices();
+}
+
+void BezierCurve::setPoint3(glm::vec2& point3)
+{
+    _point3 = point3;
+    createOutline();
+    createOutlineVertices();
+}
+
+
+Rectangle::Rectangle(glm::vec2 center, float width, float height)
+    : _center(center), _width(width), _height(height)
+{
+
+}
+
+Rectangle::~ Rectangle()
+{
+
+}
+
+void Rectangle::createOutline()
+{
+    _outline.reset();
+
+    glm::vec2 p0 = glm::vec2(_center.x - _width/2.0, _center.y + _height/2.0);
+    glm::vec2 p1 = glm::vec2(_center.x + _width/2.0, _center.y + _height/2.0);
+    glm::vec2 p2 = glm::vec2(_center.x + _width/2.0, _center.y - _height/2.0);
+    glm::vec2 p3 = glm::vec2(_center.x - _width/2.0, _center.y - _height/2.0);
+    glm::vec2 p4 = p0;
+
+    _outline.appendPosition(p0);
+
+    _outline.appendPosition(p1);
+    _outline.getPoints().back().setCuspPoint(true);
+
+    _outline.appendPosition(p2);
+    _outline.getPoints().back().setCuspPoint(true);
+
+    _outline.appendPosition(p3);
+    _outline.getPoints().back().setCuspPoint(true);
+
+    _outline.appendPosition(p4);
+    _outline.getPoints().back().setCuspPoint(true);
+}
+
+
+glm::vec2& Rectangle::getCenter()
+{
+    return _center;
+}
+
+void Rectangle::setCenter(glm::vec2& point)
+{
+    _center = point;
+    createOutline();
+    createOutlineVertices();
+    createShapeVertices();
+}
+
+Line::Line(glm::vec2 p0, glm::vec2 p1)
+    : _point0(p0),
+    _point1(p1)
+{
+}
+
+Line::~Line()
+{
+}
+
+void Line::createOutline()
+{
+    _outline.reset();
+    glm::vec2 p0 = _point0;
+    glm::vec2 p1 = _point1;
+    float distance = glm::distance(p0, p1);
+    glm::vec2 p = p0;
+
+    _outline.appendPosition(p0);
+    _outline.appendPosition(p1);
+}
+
+glm::vec2& Line::getPoint0()
+{
+    return _point0;
+}
+
+glm::vec2& Line::getPoint1()
+{
+    return _point1;
+}
+
+void Line::setPoint0(glm::vec2& point0)
+{
+    _point0 = point0;
+    createOutline();
+    createOutlineVertices();
+}
+
+void Line::setPoint1(glm::vec2& point1)
+{
+    _point1 = point1;
+    createOutline();
+    createOutlineVertices();
+}
 
 }

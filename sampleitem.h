@@ -70,13 +70,12 @@ protected:
     float _scale = 1.0f;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
-    float _zoom = 500.0f;
+    float _zoom = 100.0f;
+    bool _zoomable = false;
     QPointF _focus = {0.0f, 0.0f};
     bool _spaceButtonDown = false;
     bool _leftButtonDown = false;
 
-    QPoint _mosePosition0 = {0, 0};
-    QPoint _mosePosition1 = {0, 0};
 
 Q_SIGNALS:
     void angleChanged();

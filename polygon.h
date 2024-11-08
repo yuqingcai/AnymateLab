@@ -1,5 +1,5 @@
-#ifndef MORPHING_H
-#define MORPHING_H
+#ifndef POLYGON_H
+#define POLYGON_H
 
 #include "graphic.h"
 #include "sampleitem.h"
@@ -7,11 +7,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class MorphingRenderer: public QQuickRhiItemRenderer
+class PolygonRenderer: public QQuickRhiItemRenderer
 {
 public:
-    MorphingRenderer();
-    ~MorphingRenderer();
+    PolygonRenderer();
+    ~PolygonRenderer();
     void initialize(QRhiCommandBuffer *cb) override;
     void synchronize(QQuickRhiItem *item) override;
     void render(QRhiCommandBuffer *cb) override;
@@ -45,8 +45,6 @@ private:
     std::unique_ptr<QRhiBuffer> _indexBuffer1;
     std::unique_ptr<QRhiBuffer> _modelBuffer1;
 
-
-
     QMatrix4x4 _view;
     QMatrix4x4 _projection;
 
@@ -59,36 +57,28 @@ private:
         QRhiShaderResourceBinding::ComputeStage;
 
     float _angle = 0.0f;
-    int _morphing = 0;
     float _orthoX = 0.0f;
     float _orthoY = 0.0f;
     float _zoom = 1.0f;
     QPointF _focus = {0.0f, 0.0f};
-    bool _updateMophing = false;
 
     std::vector<Vangoh::Shape*> _shapes;
 };
 
-class Morphing: public SampleItem
+class Polygon: public SampleItem
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Morphing)
-    Q_PROPERTY(int morphing READ morphing WRITE setMorphing NOTIFY morphingChanged)
+    QML_NAMED_ELEMENT(Polygon)
 
 public:
-    Morphing();
-    virtual ~ Morphing();
+    Polygon();
+    virtual ~ Polygon();
     QQuickRhiItemRenderer *createRenderer() override;
-    int morphing() const;
-    void setMorphing(int morphing);
     std::vector<Vangoh::Shape*>& getShapes();
 
 private:
-    int _morphing = 0;
     std::vector<Vangoh::Shape*> _shapes;
 
-Q_SIGNALS:
-    void morphingChanged();
 };
 
 
@@ -139,4 +129,4 @@ protected:
     }
 };
 
-#endif // MORPHING_H
+#endif // POLYGON_H

@@ -76,11 +76,8 @@ void TextureRenderer::render(QRhiCommandBuffer *cb)
                                   &model);
     }
 
-
-    // crateTextureImage();
-    // QRhiTextureSubresourceUploadDescription subresDesc(_textureImage);
-    // QRhiTextureUploadDescription uploadDesc(subresDesc);
-    batch->uploadTexture(_texture.get(), _textureImage);
+    // QImage textureImage;
+    // batch->uploadTexture(_texture.get(), textureImage);
 
     cb->resourceUpdate(batch);
 

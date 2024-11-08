@@ -6,8 +6,8 @@
 #include <QtMath>
 #include <QPainter>
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+// #define PY_SSIZE_T_CLEAN
+// #include <Python.h>
 
 static const QSize TEXTURE_SIZE(512, 512);
 
@@ -611,10 +611,7 @@ void CubesRenderer::initialize(QRhiCommandBuffer *cb)
         m_pipeline2.reset();
         m_pipeline3.reset();
         m_pipeline4.reset();
-
     }
-
-    ShowFreatures(m_rhi);
 
     if (m_sampleCount != renderTarget()->sampleCount()) {
         m_sampleCount = renderTarget()->sampleCount();

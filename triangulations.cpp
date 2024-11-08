@@ -6,80 +6,80 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <freetype/freetype.h>
+// #include <freetype/freetype.h>
 #include <iostream>
 
-void traverseOutline(const FT_Outline& outline, std::vector<float>& vertices) {
-    for (int i = 0; i < outline.n_contours; ++i) {
-        int contour_start = (i == 0) ? 0 : outline.contours[i - 1] + 1;
-        int contour_end = outline.contours[i];
+// void traverseOutline(const FT_Outline& outline, std::vector<float>& vertices) {
+//     for (int i = 0; i < outline.n_contours; ++i) {
+//         int contour_start = (i == 0) ? 0 : outline.contours[i - 1] + 1;
+//         int contour_end = outline.contours[i];
 
-        for (int j = contour_start; j <= contour_end; ++j) {
-            vertices.push_back(outline.points[j].x);
-            vertices.push_back(outline.points[j].y);
-            vertices.push_back(0.0);
+//         for (int j = contour_start; j <= contour_end; ++j) {
+//             vertices.push_back(outline.points[j].x);
+//             vertices.push_back(outline.points[j].y);
+//             vertices.push_back(0.0);
 
-            if (j == contour_end) {
-                vertices.push_back(outline.points[contour_start].x);
-                vertices.push_back(outline.points[contour_start].y);
-                vertices.push_back(0.0);
-            }
-            else {
-                vertices.push_back(outline.points[j+1].x);
-                vertices.push_back(outline.points[j+1].y);
-                vertices.push_back(0.0);
-            }
+//             if (j == contour_end) {
+//                 vertices.push_back(outline.points[contour_start].x);
+//                 vertices.push_back(outline.points[contour_start].y);
+//                 vertices.push_back(0.0);
+//             }
+//             else {
+//                 vertices.push_back(outline.points[j+1].x);
+//                 vertices.push_back(outline.points[j+1].y);
+//                 vertices.push_back(0.0);
+//             }
 
-        }
-    }
-}
+//         }
+//     }
+// }
 
-int GetFontOutline(FT_ULong c, std::vector<float>& vertices) {
-    // 初始化 FreeType 库
-    FT_Library library;
-    if (FT_Init_FreeType(&library)) {
-        std::cerr << "Could not initialize FreeType library.\n";
-        return 1;
-    }
+// int GetFontOutline(FT_ULong c, std::vector<float>& vertices) {
+//     // 初始化 FreeType 库
+//     FT_Library library;
+//     if (FT_Init_FreeType(&library)) {
+//         std::cerr << "Could not initialize FreeType library.\n";
+//         return 1;
+//     }
 
-    // 加载字体文件
-    FT_Face face;
-    if (FT_New_Face(library, "/Volumes/Volume0/Users/yuqingcai/Library/Fonts/狮尾福腿黑体-Bold.ttf", 0, &face)) {
-        std::cerr << "Could not load font file.\n";
-        FT_Done_FreeType(library);
-        return 1;
-    }
+//     // 加载字体文件
+//     FT_Face face;
+//     if (FT_New_Face(library, "/Volumes/Volume0/Users/yuqingcai/Library/Fonts/狮尾福腿黑体-Bold.ttf", 0, &face)) {
+//         std::cerr << "Could not load font file.\n";
+//         FT_Done_FreeType(library);
+//         return 1;
+//     }
 
-    // 设置字符大小 (单位: 1/64 点)
-    FT_Set_Char_Size(face, 0, 24 * 64, 10, 10);  // 设置字体大小为 16pt，DPI 为 300
+//     // 设置字符大小 (单位: 1/64 点)
+//     FT_Set_Char_Size(face, 0, 24 * 64, 10, 10);  // 设置字体大小为 16pt，DPI 为 300
 
-    // 加载字符
-    FT_UInt glyph_index = FT_Get_Char_Index(face, c);
-    if (FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP)) {
-        std::cerr << "Could not load glyph.\n";
-        FT_Done_Face(face);
-        FT_Done_FreeType(library);
-        return 1;
-    }
+//     // 加载字符
+//     FT_UInt glyph_index = FT_Get_Char_Index(face, c);
+//     if (FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP)) {
+//         std::cerr << "Could not load glyph.\n";
+//         FT_Done_Face(face);
+//         FT_Done_FreeType(library);
+//         return 1;
+//     }
 
-    // 检查是否存在轮廓
-    if (face->glyph->format != FT_GLYPH_FORMAT_OUTLINE) {
-        std::cerr << "Glyph does not contain an outline.\n";
-        FT_Done_Face(face);
-        FT_Done_FreeType(library);
-        return 1;
-    }
+//     // 检查是否存在轮廓
+//     if (face->glyph->format != FT_GLYPH_FORMAT_OUTLINE) {
+//         std::cerr << "Glyph does not contain an outline.\n";
+//         FT_Done_Face(face);
+//         FT_Done_FreeType(library);
+//         return 1;
+//     }
 
-    // 获取轮廓数据
-    FT_Outline outline = face->glyph->outline;
-    traverseOutline(outline, vertices);
+//     // 获取轮廓数据
+//     FT_Outline outline = face->glyph->outline;
+//     traverseOutline(outline, vertices);
 
-    // 清理
-    FT_Done_Face(face);
-    FT_Done_FreeType(library);
+//     // 清理
+//     FT_Done_Face(face);
+//     FT_Done_FreeType(library);
 
-    return 0;
-}
+//     return 0;
+// }
 
 TriangulationsRenderer::TriangulationsRenderer()
 {

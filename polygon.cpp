@@ -1,20 +1,20 @@
-#include "morphing.h"
+#include "polygon.h"
 #include <QFile>
 #include <QtGui/qevent.h>
 #include <cstdio>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
-MorphingRenderer::MorphingRenderer()
+PolygonRenderer::PolygonRenderer()
 {
 }
 
 
-MorphingRenderer::~MorphingRenderer()
+PolygonRenderer::~PolygonRenderer()
 {
 }
 
-int MorphingRenderer::createBuffer0()
+int PolygonRenderer::createBuffer0()
 {
     if (!_rhi)
         return -1;
@@ -40,7 +40,7 @@ int MorphingRenderer::createBuffer0()
 }
 
 
-int MorphingRenderer::createShaderResourceBinding0()
+int PolygonRenderer::createShaderResourceBinding0()
 {
 
     if (!_rhi)
@@ -69,7 +69,7 @@ int MorphingRenderer::createShaderResourceBinding0()
     return 0;
 }
 
-int MorphingRenderer::createPipline0()
+int PolygonRenderer::createPipline0()
 {
     if (!_rhi || !_srb0)
         return -1;
@@ -130,7 +130,7 @@ int MorphingRenderer::createPipline0()
 }
 
 
-int MorphingRenderer::createBuffer1()
+int PolygonRenderer::createBuffer1()
 {
     if (!_rhi)
         return -1;
@@ -155,7 +155,7 @@ int MorphingRenderer::createBuffer1()
     return 0;
 }
 
-int MorphingRenderer::createShaderResourceBinding1()
+int PolygonRenderer::createShaderResourceBinding1()
 {
 
     if (!_rhi)
@@ -185,7 +185,7 @@ int MorphingRenderer::createShaderResourceBinding1()
 }
 
 
-int MorphingRenderer::createPipline1()
+int PolygonRenderer::createPipline1()
 {
     if (!_rhi || !_srb1)
         return -1;
@@ -244,7 +244,7 @@ int MorphingRenderer::createPipline1()
 }
 
 
-void MorphingRenderer::initialize(QRhiCommandBuffer *cb)
+void PolygonRenderer::initialize(QRhiCommandBuffer *cb)
 {
 
     if (_rhi != rhi()) {
@@ -288,12 +288,8 @@ void MorphingRenderer::initialize(QRhiCommandBuffer *cb)
 }
 
 
-void MorphingRenderer::render(QRhiCommandBuffer *cb)
+void PolygonRenderer::render(QRhiCommandBuffer *cb)
 {
-    if (!_updateMophing) {
-        // return;
-    }
-
     const QSize outputSize = renderTarget()->pixelSize();
     _projection = _rhi->clipSpaceCorrMatrix();
 
@@ -431,19 +427,11 @@ void MorphingRenderer::render(QRhiCommandBuffer *cb)
 
 }
 
-void MorphingRenderer::synchronize(QQuickRhiItem *rhiItem)
+void PolygonRenderer::synchronize(QQuickRhiItem *rhiItem)
 {
-    Morphing *item = static_cast<Morphing *>(rhiItem);
+    Polygon *item = static_cast<Polygon *>(rhiItem);
     if (item->angle() != _angle)
         _angle = item->angle();
-
-    if (item->morphing() != _morphing) {
-        _morphing = item->morphing();
-        _updateMophing = true;
-    }
-    else {
-        _updateMophing = false;
-    }
 
     _orthoX = item->getOrthoX();
     _orthoY = item->getOrthoY();
@@ -453,7 +441,7 @@ void MorphingRenderer::synchronize(QQuickRhiItem *rhiItem)
     _shapes = item->getShapes();
 }
 
-Morphing::Morphing()
+Polygon::Polygon()
 {
     WorkerThread *workerThread = new WorkerThread(this);
     workerThread->start();
@@ -485,7 +473,7 @@ Morphing::Morphing()
 
 }
 
-Morphing:: ~ Morphing()
+Polygon:: ~ Polygon()
 {
     for (auto ptr : _shapes) {
         delete ptr;
@@ -493,22 +481,13 @@ Morphing:: ~ Morphing()
     _shapes.clear();
 }
 
-QQuickRhiItemRenderer* Morphing::createRenderer()
+QQuickRhiItemRenderer* Polygon::createRenderer()
 {
-    return new MorphingRenderer();
+    return new PolygonRenderer();
 }
 
-int Morphing::morphing() const
-{
-    return _morphing;
-}
 
-void Morphing::setMorphing(int morphing)
-{
-    _morphing = morphing;
-}
-
-std::vector<Vangoh::Shape*>& Morphing::getShapes()
+std::vector<Vangoh::Shape*>& Polygon::getShapes()
 {
     return _shapes;
 }

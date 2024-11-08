@@ -20,7 +20,6 @@ protected:
 
 };
 
-
 class Shape : public GraphicObject
 {
 public:
@@ -68,18 +67,6 @@ protected:
     std::vector<glm::vec2> _points;
 };
 
-class Line: public Shape
-{
-public:
-    Line(glm::vec2 p0, glm::vec2 p1);
-    virtual ~ Line();
-
-protected:
-    void createOutline() override;
-
-    glm::vec2 _endPoint0;
-    glm::vec2 _endPoint1;
-};
 
 class Squircles: public Shape
 {
@@ -97,26 +84,68 @@ protected:
 
 };
 
-class BezierCurve: public Shape
+class BezierCurve : public Shape
 {
 
 public:
     BezierCurve(glm::vec2 point0, glm::vec2 point1,
                 glm::vec2 point2, glm::vec2 point3);
-    virtual ~ BezierCurve();
+    virtual ~BezierCurve();
+
+    glm::vec2& getPoint0();
+    glm::vec2& getPoint1();
+    glm::vec2& getPoint2();
+    glm::vec2& getPoint3();
+
+    void setPoint0(glm::vec2& point0);
+    void setPoint1(glm::vec2& point1);
+    void setPoint2(glm::vec2& point2);
+    void setPoint3(glm::vec2& point3);
 
 protected:
-    // void createShapeVertices() override;
     void createOutline() override;
     glm::vec2 interp(float t);
-    glm::vec2 derivative(float t);
-    float arcLength(float t0, float t1, int segments = 100);
-    float findTForArcLength(float targetLength, int segments = 100);
 
     glm::vec2 _point0;
     glm::vec2 _point1;
     glm::vec2 _point2;
     glm::vec2 _point3;
+};
+
+class Rectangle: public Shape
+{
+public:
+    Rectangle(glm::vec2 center, float width, float height);
+    virtual ~ Rectangle();
+    glm::vec2& getCenter();
+    void setCenter(glm::vec2& point);
+
+protected:
+    void createOutline() override;
+
+    glm::vec2 _center;
+    float _width;
+    float _height;
+};
+
+
+class Line : public Shape
+{
+public:
+    Line(glm::vec2 p0, glm::vec2 p1);
+    virtual ~Line();
+
+    glm::vec2& getPoint0();
+    glm::vec2& getPoint1();
+
+    void setPoint0(glm::vec2& point0);
+    void setPoint1(glm::vec2& point1);
+
+protected:
+    void createOutline() override;
+
+    glm::vec2 _point0;
+    glm::vec2 _point1;
 };
 
 }

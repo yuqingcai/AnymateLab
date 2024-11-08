@@ -27,17 +27,17 @@ SampleItem:: ~ SampleItem()
 
 }
 
+
 void SampleItem::hoverMoveEvent(QHoverEvent *event)
 {
     if (_spaceButtonDown) {
 
-        int offsetX = (int)event->position().x() -
-                      _mosePosition0.x() - this->width()/2;
-        int offsetY = this->height()/2 -
-                      (int)event->position().y() - _mosePosition0.y();
+        QPointF currentPos = event->position();
+        QPointF lastPos = event->oldPosF();
+        QPointF offset = currentPos - lastPos;
 
-        _focus.setX(offsetX);
-        _focus.setY(offsetY);
+        _focus.setX(_focus.x()-offset.x());
+        _focus.setY(_focus.y()+offset.y());
 
         // qDebug() << m_focus << m_mosePosition0 << event->position();
     }
@@ -49,19 +49,18 @@ void SampleItem::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         if (!_leftButtonDown) {
             _leftButtonDown = true;
-            qDebug("m_leftButtonDown true");
+            // qDebug("m_leftButtonDown true");
         }
     }
     return QQuickRhiItem::mousePressEvent(event);
 }
-
 
 void SampleItem::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         if (_leftButtonDown) {
             _leftButtonDown = false;
-            qDebug("m_leftButtonDown false");
+            // qDebug("m_leftButtonDown false");
         }
     }
     return QQuickRhiItem::mouseReleaseEvent(event);
@@ -70,12 +69,15 @@ void SampleItem::mouseReleaseEvent(QMouseEvent *event)
 void SampleItem::wheelEvent(QWheelEvent *event)
 {
     // qDebug() << "Mouse wheel delta: " << event->angleDelta();
-    if (event->angleDelta().y() > 0) {
-        _zoom += 10.0;
-    }
-    else if (event->angleDelta().y() < 0) {
-        if (_zoom - 10.0 >= 10.0)
-            _zoom -= 10.0;
+    if (_zoomable) {
+        if (event->angleDelta().y() > 0) {
+            _zoom += 10.0;
+        }
+        else if (event->angleDelta().y() < 0) {
+            if (_zoom - 10.0 >= 10.0)
+                _zoom -= 10.0;
+        }
+        qDebug("zoom: %.1f", _zoom);
     }
     return QQuickRhiItem::wheelEvent(event);
 }
@@ -86,20 +88,23 @@ void SampleItem::keyPressEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_Up) {
         _orthoY -= 100.0;
     }
-    else if (event->key() == Qt::Key_Down) {
+    if (event->key() == Qt::Key_Down) {
         _orthoY += 100.0;
     }
-    else if (event->key() == Qt::Key_Left) {
+    if (event->key() == Qt::Key_Left) {
         _orthoX += 100.0;
     }
-    else if (event->key() == Qt::Key_Right) {
+    if (event->key() == Qt::Key_Right) {
         _orthoX -= 100.0;
     }
-    else if (event->key() == Qt::Key_Space) {
+    if (event->key() == Qt::Key_Space) {
         if (!_spaceButtonDown) {
             _spaceButtonDown = true;
-            qDebug("m_spaceButtonDown true");
+            // qDebug("m_spaceButtonDown true");
         }
+    }
+    if (event->key() == Qt::Key_Alt) {
+        _zoomable = true;
     }
     return QQuickRhiItem::keyPressEvent(event);
 }
@@ -109,8 +114,12 @@ void SampleItem::keyReleaseEvent(QKeyEvent *event)
     if (event->key() == Qt::Key_Space) {
         if (_spaceButtonDown) {
             _spaceButtonDown = false;
-            qDebug("m_spaceButtonDown false");
+            // qDebug("m_spaceButtonDown false");
         }
+    }
+
+    if (event->key() == Qt::Key_Alt) {
+        _zoomable = false;
     }
 
     return QQuickRhiItem::keyReleaseEvent(event);
